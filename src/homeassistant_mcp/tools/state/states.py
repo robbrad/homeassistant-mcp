@@ -95,9 +95,19 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
                     f"(domain={domain}, area={area}, limit={limit}, offset={offset})"
                 )
 
+                # For list action, return compact summaries to reduce context size
+                compact_entities = [
+                    {
+                        "entity_id": s.get("entity_id"),
+                        "state": s.get("state"),
+                        "name": s.get("attributes", {}).get("friendly_name"),
+                    }
+                    for s in states
+                ]
+
                 return {
                     "success": True,
-                    "entities": states,
+                    "entities": compact_entities,
                     "count": len(states),
                     "total": total_found,
                     "truncated": truncated,

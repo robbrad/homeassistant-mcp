@@ -64,6 +64,9 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
             elif action == "config":
                 logger.info("Fetching Home Assistant configuration")
                 result = await client.get_config()
+                # Strip large internal fields to reduce context size
+                for key in ["allowlist_external_dirs", "allowlist_external_urls", "safe_mode"]:
+                    result.pop(key, None)
                 return {"success": True, "action": "config", "data": result}
 
             elif action == "components":
@@ -72,7 +75,7 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
                 return {
                     "success": True,
                     "action": "components",
-                    "data": {"components": components, "count": len(components)},
+                    "data": {"count": len(components), "components": sorted(components)},
                 }
 
             else:

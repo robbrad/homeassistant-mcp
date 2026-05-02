@@ -23,12 +23,17 @@ def register_error_log_tool(mcp: Any, get_client: Any) -> None:
     """
 
     @mcp.tool()
-    async def error_log_get() -> dict:
+    async def error_log_get(
+        max_length: int = 5000,
+    ) -> dict:
         """Retrieve Home Assistant error logs.
 
-        This tool retrieves the complete error log from Home Assistant as plain text.
+        This tool retrieves the error log from Home Assistant as plain text.
         The error log contains Python exceptions, warnings, and error messages from
         Home Assistant core and integrations.
+
+        The log is truncated to max_length characters to prevent context overflow.
+        Only the most recent entries (end of log) are returned.
 
         Use this tool to:
         - Diagnose problems with Home Assistant
@@ -36,14 +41,23 @@ def register_error_log_tool(mcp: Any, get_client: Any) -> None:
         - Troubleshoot integration issues
         - Debug automation failures
 
+        Args:
+            max_length: Maximum characters to return (default 5000, max 20000).
+                        Returns the most recent log entries (tail of log).
+
         Returns:
             Dictionary containing:
                 - success: Boolean indicating success
-                - log_size: Size of the log in bytes
+                - log_size: Total size of the log in bytes
+                - returned_size: Size of the returned portion
+                - truncated: Whether the log was truncated
                 - has_errors: Boolean indicating if log contains content
-                - error_log: The complete error log as plain text (or empty string)
+                - error_log: The error log text (truncated to max_length)
         """
         client: HomeAssistantClient = get_client()
+
+        # Clamp max_length
+        max_length = max(500, min(max_length, 20000))
 
         try:
             logger.info("Retrieving Home Assistant error log")
@@ -54,12 +68,23 @@ def register_error_log_tool(mcp: Any, get_client: Any) -> None:
             # Calculate log size
             log_size = len(error_log) if error_log else 0
             has_errors = log_size > 0
+            truncated = log_size > max_length
 
-            logger.info(f"Retrieved error log ({log_size} bytes, has_errors={has_errors})")
+            # Truncate to tail (most recent entries)
+            if truncated:
+                error_log = "... [truncated, showing last {} chars of {}] ...\n{}".format(
+                    max_length, log_size, error_log[-max_length:]
+                )
+
+            logger.info(
+                f"Retrieved error log ({log_size} bytes, truncated={truncated})"
+            )
 
             return {
                 "success": True,
                 "log_size": log_size,
+                "returned_size": len(error_log),
+                "truncated": truncated,
                 "has_errors": has_errors,
                 "error_log": error_log,
             }

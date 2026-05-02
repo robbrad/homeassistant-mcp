@@ -36,21 +36,25 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
 
         Args:
             action: The action to perform:
-                - list: Get all available services (GET /api/services)
+                - list: Get available services (GET /api/services).
+                  Use domain filter to list services for a specific domain.
+                  Without domain, returns a summary of domains and service counts only.
                 - call: Execute a service (POST /api/services/<domain>/<service>)
-            domain: Service domain (required for 'call' action, e.g., 'light', 'switch')
+            domain: For 'list': filter to a specific domain (RECOMMENDED).
+                    For 'call': service domain (required, e.g., 'light', 'switch')
             service: Service name (required for 'call' action, e.g., 'turn_on', 'turn_off')
             service_data: Optional service parameters (for 'call' action)
             return_response: If True, return service response data (for 'call' action)
 
         Returns:
-            Dictionary containing the result:
-            - list: {"success": True, "action": "list", "data": {...}}
-            - call: {"success": True, "action": "call", "domain": "...", "service": "...", ...}
+            Dictionary containing the result.
 
         Examples:
-            # List all available services
+            # List all domains (summary only)
             services_control(action="list")
+
+            # List services for a specific domain
+            services_control(action="list", domain="light")
 
             # Turn on a light
             services_control(
@@ -58,26 +62,6 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
                 domain="light",
                 service="turn_on",
                 service_data={"entity_id": "light.living_room"}
-            )
-
-            # Call a service with return_response
-            services_control(
-                action="call",
-                domain="weather",
-                service="get_forecasts",
-                service_data={"type": "daily"},
-                return_response=True
-            )
-
-            # Set climate temperature
-            services_control(
-                action="call",
-                domain="climate",
-                service="set_temperature",
-                service_data={
-                    "entity_id": "climate.living_room",
-                    "temperature": 22
-                }
             )
 
         Raises:
@@ -97,35 +81,47 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
                     for service_domain in services:
                         domain_name = service_domain.get("domain", "unknown")
                         services_dict[domain_name] = service_domain.get("services", {})
-
-                    total_services = sum(
-                        len(domain_services) for domain_services in services_dict.values()
-                    )
-
-                    return {
-                        "success": True,
-                        "action": "list",
-                        "data": services_dict,
-                        "summary": {
-                            "total_domains": len(services_dict),
-                            "total_services": total_services,
-                        },
-                    }
                 else:
-                    # Original dict format
-                    total_services = sum(
-                        len(domain_services) for domain_services in services.values()
-                    )
+                    services_dict = services
 
+                # If domain filter provided, return full details for that domain only
+                if domain:
+                    if domain not in services_dict:
+                        return {
+                            "success": True,
+                            "action": "list",
+                            "domain": domain,
+                            "data": {},
+                            "message": f"No services found for domain '{domain}'",
+                        }
                     return {
                         "success": True,
                         "action": "list",
-                        "data": services,
-                        "summary": {
-                            "total_domains": len(services),
-                            "total_services": total_services,
-                        },
+                        "domain": domain,
+                        "data": {domain: services_dict[domain]},
+                        "service_count": len(services_dict[domain]),
                     }
+
+                # Without domain filter, return summary only (domain -> service names)
+                summary = {}
+                for d, svc in services_dict.items():
+                    summary[d] = list(svc.keys()) if isinstance(svc, dict) else []
+
+                total_services = sum(len(v) for v in summary.values())
+
+                return {
+                    "success": True,
+                    "action": "list",
+                    "message": (
+                        "Showing domain summary. Use domain parameter to get "
+                        "full service details for a specific domain."
+                    ),
+                    "data": summary,
+                    "summary": {
+                        "total_domains": len(summary),
+                        "total_services": total_services,
+                    },
+                }
 
             elif action == "call":
                 # Validate required parameters

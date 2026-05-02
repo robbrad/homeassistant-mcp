@@ -271,9 +271,10 @@ async def _list_and_filter_devices(
             state = device.get("state", "unknown")
             state_counts[state] += 1
 
-        # Get sample devices (up to 5)
+        # Get sample devices (up to 5 when filtered, 3 when showing all)
+        max_samples = 5 if domain else 3
         sample_devices = []
-        for device in devices[:5]:
+        for device in devices[:max_samples]:
             sample_devices.append(
                 {
                     "entity_id": device.get("entity_id"),
