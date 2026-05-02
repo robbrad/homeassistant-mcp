@@ -234,6 +234,15 @@ def main() -> None:
     """Entry point for the homeassistant-mcp command."""
     import sys
 
+    if "--version" in sys.argv:
+        from importlib.metadata import version as _get_version
+
+        try:
+            print(f"homeassistant-mcp {_get_version('homeassistant-mcp')}")
+        except Exception:
+            print("homeassistant-mcp (version unknown)")
+        return
+
     # Check if we should run in SSE mode for Inspector
     if "--sse" in sys.argv:
         # Remove --sse from argv so it doesn't interfere

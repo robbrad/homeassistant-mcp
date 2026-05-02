@@ -58,15 +58,14 @@ class Settings(BaseSettings):
     server_name: str = Field(default="Home Assistant MCP", description="MCP server name")
     server_version: str = Field(default="", description="MCP server version (auto-detected)")
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
+    def model_post_init(self, __context: Any) -> None:
         if not self.server_version:
             from importlib.metadata import version as _get_version
 
             try:
-                self.server_version = _get_version("homeassistant-mcp")
+                object.__setattr__(self, "server_version", _get_version("homeassistant-mcp"))
             except Exception:
-                self.server_version = "unknown"
+                object.__setattr__(self, "server_version", "unknown")
 
     # Cache Configuration (Optional)
     cache_ttl_states: int = Field(
