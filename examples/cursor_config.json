@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "homeassistant": {
+      "name": "Home Assistant",
+      "command": "uvx",
+      "args": ["homeassistant-mcp"],
+      "env": {
+        "HASS_HOST": "http://homeassistant.local:8123",
+        "HASS_TOKEN": "your_long_lived_access_token_here"
+      }
+    }
+  }
+}

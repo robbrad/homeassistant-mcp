@@ -1,0 +1,292 @@
+"""Unit tests for the history query tool."""
+
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from src.homeassistant_mcp.hass.client import (
+    EntityNotFoundError,
+    HomeAssistantClient,
+)
+# Import from the old history.py file (not the history/ directory)
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+from homeassistant_mcp.tools.history import _query_history
+
+
+@pytest.fixture
+def mock_client():
+    """Create a mock Home Assistant client."""
+    client = AsyncMock(spec=HomeAssistantClient)
+    return client
+
+
+@pytest.fixture
+def sample_history_data():
+    """Sample history data for testing."""
+    return [
+        [
+            {
+                "entity_id": "sensor.temperature",
+                "state": "22.5",
+                "attributes": {
+                    "friendly_name": "Temperature Sensor",
+                    "unit_of_measurement": "°C",
+                    "device_class": "temperature",
+                },
+                "last_changed": "2024-01-01T12:00:00+00:00",
+                "last_updated": "2024-01-01T12:00:00+00:00",
+            },
+            {
+                "entity_id": "sensor.temperature",
+                "state": "23.0",
+                "attributes": {
+                    "friendly_name": "Temperature Sensor",
+                    "unit_of_measurement": "°C",
+                    "device_class": "temperature",
+                },
+                "last_changed": "2024-01-01T13:00:00+00:00",
+                "last_updated": "2024-01-01T13:00:00+00:00",
+            },
+            {
+                "entity_id": "sensor.temperature",
+                "state": "22.8",
+                "attributes": {
+                    "friendly_name": "Temperature Sensor",
+                    "unit_of_measurement": "°C",
+                    "device_class": "temperature",
+                },
+                "last_changed": "2024-01-01T14:00:00+00:00",
+                "last_updated": "2024-01-01T14:00:00+00:00",
+            },
+        ]
+    ]
+
+
+class TestQueryHistory:
+    """Tests for querying history."""
+
+    @pytest.mark.asyncio
+    async def test_query_history_success(self, mock_client, sample_history_data):
+        """Test successfully querying history."""
+        mock_client.get_state.return_value = {
+            "entity_id": "sensor.temperature",
+            "state": "22.5",
+            "attributes": {},
+        }
+        mock_client.get_history.return_value = sample_history_data
+
+        result = await _query_history(mock_client, "sensor.temperature", hours=24, limit=100)
+
+        assert result["success"] is True
+        assert result["entity_id"] == "sensor.temperature"
+        assert result["hours"] == 24
+        assert result["count"] == 3
+        assert result["total_available"] == 3
+        assert result["limited"] is False
+        assert len(result["history"]) == 3
+
+        # Verify first entry
+        first_entry = result["history"][0]
+        assert first_entry["state"] == "22.5"
+        assert first_entry["last_changed"] == "2024-01-01T12:00:00+00:00"
+        assert "unit_of_measurement" in first_entry["attributes"]
+        assert first_entry["attributes"]["unit_of_measurement"] == "°C"
+
+        # Verify get_history was called with correct parameters
+        mock_client.get_history.assert_called_once()
+        call_args = mock_client.get_history.call_args
+        assert call_args[1]["entity_id"] == "sensor.temperature"
+
+    @pytest.mark.asyncio
+    async def test_query_history_with_limit(self, mock_client):
+        """Test querying history with a limit smaller than available data."""
+        # Create more history entries than the limit
+        large_history = [
+            [
+                {
+                    "entity_id": "sensor.temperature",
+                    "state": f"{20 + i}",
+                    "attributes": {},
+                    "last_changed": f"2024-01-01T{i:02d}:00:00+00:00",
+                    "last_updated": f"2024-01-01T{i:02d}:00:00+00:00",
+                }
+                for i in range(150)  # 150 entries
+            ]
+        ]
+
+        mock_client.get_state.return_value = {
+            "entity_id": "sensor.temperature",
+            "state": "22.5",
+            "attributes": {},
+        }
+        mock_client.get_history.return_value = large_history
+
+        result = await _query_history(
+            mock_client, "sensor.temperature", hours=24, limit=50  # Limit to 50
+        )
+
+        assert result["success"] is True
+        assert result["count"] == 50  # Should be limited
+        assert result["total_available"] == 150
+        assert result["limited"] is True
+        assert len(result["history"]) == 50
+
+    @pytest.mark.asyncio
+    async def test_query_history_empty(self, mock_client):
+        """Test querying history when no data is available."""
+        mock_client.get_state.return_value = {
+            "entity_id": "sensor.temperature",
+            "state": "22.5",
+            "attributes": {},
+        }
+        mock_client.get_history.return_value = []
+
+        result = await _query_history(mock_client, "sensor.temperature", hours=24, limit=100)
+
+        assert result["success"] is True
+        assert result["count"] == 0
+        assert result["history"] == []
+
+    @pytest.mark.asyncio
+    async def test_query_history_entity_not_found(self, mock_client):
+        """Test querying history for non-existent entity."""
+        mock_client.get_state.side_effect = EntityNotFoundError(
+            "Entity 'sensor.nonexistent' not found"
+        )
+
+        with pytest.raises(EntityNotFoundError):
+            await _query_history(mock_client, "sensor.nonexistent", hours=24, limit=100)
+
+    @pytest.mark.asyncio
+    async def test_query_history_different_hours(self, mock_client, sample_history_data):
+        """Test querying history with different hour ranges."""
+        mock_client.get_state.return_value = {
+            "entity_id": "sensor.temperature",
+            "state": "22.5",
+            "attributes": {},
+        }
+        mock_client.get_history.return_value = sample_history_data
+
+        # Test with 1 hour
+        result = await _query_history(mock_client, "sensor.temperature", hours=1, limit=100)
+
+        assert result["success"] is True
+        assert result["hours"] == 1
+
+        # Test with 168 hours (1 week)
+        result = await _query_history(mock_client, "sensor.temperature", hours=168, limit=100)
+
+        assert result["success"] is True
+        assert result["hours"] == 168
+
+    @pytest.mark.asyncio
+    async def test_query_history_attributes_filtering(self, mock_client):
+        """Test that only relevant attributes are included in the response."""
+        history_with_many_attrs = [
+            [
+                {
+                    "entity_id": "light.living_room",
+                    "state": "on",
+                    "attributes": {
+                        "friendly_name": "Living Room Light",
+                        "brightness": 255,
+                        "supported_features": 123,
+                        "icon": "mdi:lightbulb",
+                        "device_class": "light",
+                        "some_internal_attr": "value",
+                    },
+                    "last_changed": "2024-01-01T12:00:00+00:00",
+                    "last_updated": "2024-01-01T12:00:00+00:00",
+                }
+            ]
+        ]
+
+        mock_client.get_state.return_value = {
+            "entity_id": "light.living_room",
+            "state": "on",
+            "attributes": {},
+        }
+        mock_client.get_history.return_value = history_with_many_attrs
+
+        result = await _query_history(mock_client, "light.living_room", hours=24, limit=100)
+
+        assert result["success"] is True
+        entry = result["history"][0]
+
+        # Should include relevant attributes
+        assert "friendly_name" in entry["attributes"]
+        assert "brightness" in entry["attributes"]
+        assert "device_class" in entry["attributes"]
+
+        # Should not include all attributes (only relevant ones)
+        assert "some_internal_attr" not in entry["attributes"]
+
+
+class TestHistoryToolIntegration:
+    """Integration tests for the query_history tool function."""
+
+    @pytest.mark.asyncio
+    async def test_history_tool_registration(self, mock_client, sample_history_data):
+        """Test the query_history tool registration and execution."""
+        from src.homeassistant_mcp.tools.history import register_history_tool
+
+        mock_client.get_state.return_value = {
+            "entity_id": "sensor.temperature",
+            "state": "22.5",
+            "attributes": {},
+        }
+        mock_client.get_history.return_value = sample_history_data
+
+        # Create a mock FastMCP instance
+        mock_mcp = MagicMock()
+        registered_func = None
+
+        def mock_tool():
+            def decorator(func):
+                nonlocal registered_func
+                registered_func = func
+                return func
+
+            return decorator
+
+        mock_mcp.tool = mock_tool
+
+        # Register the tool
+        register_history_tool(mock_mcp, lambda: mock_client)
+
+        # Call the registered function
+        result = await registered_func(entity_id="sensor.temperature", hours=24, limit=100)
+
+        assert result["success"] is True
+        assert result["count"] == 3
+
+    @pytest.mark.asyncio
+    async def test_history_tool_error_handling(self):
+        """Test history tool error handling."""
+        from src.homeassistant_mcp.tools.history import register_history_tool
+
+        mock_client = AsyncMock(spec=HomeAssistantClient)
+        mock_client.get_state.side_effect = EntityNotFoundError("Entity not found")
+
+        mock_mcp = MagicMock()
+        registered_func = None
+
+        def mock_tool():
+            def decorator(func):
+                nonlocal registered_func
+                registered_func = func
+                return func
+
+            return decorator
+
+        mock_mcp.tool = mock_tool
+
+        register_history_tool(mock_mcp, lambda: mock_client)
+
+        # Test with EntityNotFoundError
+        result = await registered_func(entity_id="sensor.nonexistent", hours=24, limit=100)
+
+        assert result["success"] is False
+        assert "Entity not found" in result["error"]
