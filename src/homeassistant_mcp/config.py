@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
@@ -55,7 +56,17 @@ class Settings(BaseSettings):
 
     # Server Configuration (Optional)
     server_name: str = Field(default="Home Assistant MCP", description="MCP server name")
-    server_version: str = Field(default="2.0.0", description="MCP server version")
+    server_version: str = Field(default="", description="MCP server version (auto-detected)")
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        if not self.server_version:
+            from importlib.metadata import version as _get_version
+
+            try:
+                self.server_version = _get_version("homeassistant-mcp")
+            except Exception:
+                self.server_version = "unknown"
 
     # Cache Configuration (Optional)
     cache_ttl_states: int = Field(

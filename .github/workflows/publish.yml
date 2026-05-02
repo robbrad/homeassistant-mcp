@@ -5,38 +5,56 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Build package
-        run: uv build
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-  publish:
-    needs: build
+  version-and-publish:
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write
+      contents: write
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          name: dist
-          path: dist/
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install python-semantic-release
+        run: uv tool install python-semantic-release
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Semantic release version
+        id: semver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if semantic-release version --no-push --no-commit --print; then
+            NEW_VERSION=$(semantic-release version --no-push --no-commit --print 2>/dev/null)
+            echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            # Actually apply the version bump
+            semantic-release version --no-push --no-vcs-release
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+            echo "No version bump needed"
+          fi
+
+      - name: Push version bump
+        if: steps.semver.outputs.released == 'true'
+        run: git push && git push --tags
+
+      - name: Build package
+        if: steps.semver.outputs.released == 'true'
+        run: uv build
+
       - name: Publish to PyPI
+        if: steps.semver.outputs.released == 'true'
         run: uv publish

@@ -110,3 +110,9 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = "fastmcp.*"
 ignore_missing_imports = true
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+commit_message = "chore(release): v{version}"
+build_command = "uv build"
