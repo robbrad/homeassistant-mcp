@@ -19,11 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
-[project.urls]
-Homepage = "https://github.com/robbrad/homeassistant-mcp"
-Repository = "https://github.com/robbrad/homeassistant-mcp"
-Issues = "https://github.com/robbrad/homeassistant-mcp/issues"
-
 dependencies = [
     "fastmcp>=2.0.0",
     "httpx>=0.27.0",
@@ -31,6 +26,11 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0"
 ]
+
+[project.urls]
+Homepage = "https://github.com/robbrad/homeassistant-mcp"
+Repository = "https://github.com/robbrad/homeassistant-mcp"
+Issues = "https://github.com/robbrad/homeassistant-mcp/issues"
 
 [project.optional-dependencies]
 dev = [
