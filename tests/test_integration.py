@@ -18,6 +18,7 @@ from src.homeassistant_mcp.exceptions import (
     ServiceCallError,
 )
 from src.homeassistant_mcp.server import lifespan, mcp
+from tests.conftest import get_mcp_tools_dict, get_mcp_tools_dict_async
 
 
 @pytest.fixture
@@ -126,7 +127,7 @@ class TestToolRegistration:
             "intent_handle",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
 
         # Check all expected tools are present
         missing_tools = expected_tools - registered_tools
@@ -158,7 +159,7 @@ class TestToolRegistration:
             "intent_handle",
         }
 
-        for tool_name in mcp._tool_manager._tools.keys():
+        for tool_name in get_mcp_tools_dict(mcp).keys():
             # Most tools should end with _control except known exceptions
             if tool_name not in exceptions:
                 assert tool_name.endswith(
@@ -170,7 +171,7 @@ class TestToolRegistration:
 
     def test_all_tools_have_metadata(self):
         """Test that all tools have proper metadata."""
-        for tool_name, tool in mcp._tool_manager._tools.items():
+        for tool_name, tool in get_mcp_tools_dict(mcp).items():
             # Check description exists and is not empty
             assert tool.description is not None, f"Tool {tool_name} missing description"
             assert len(tool.description) > 10, f"Tool {tool_name} has too short description"
@@ -183,7 +184,7 @@ class TestToolRegistration:
 
     def test_tool_descriptions_are_informative(self):
         """Test that tool descriptions provide useful information."""
-        for tool_name, tool in mcp._tool_manager._tools.items():
+        for tool_name, tool in get_mcp_tools_dict(mcp).items():
             description = tool.description.lower()
 
             # Description should mention what the tool does
@@ -205,6 +206,7 @@ class TestToolRegistration:
                     "edit",
                     "delete",
                     "update",
+                    "render",
                 ]
             ), f"Tool {tool_name} description doesn't describe action"
 
@@ -228,7 +230,7 @@ class TestToolRegistration:
             "intent_handle",
         }
 
-        for tool_name, tool in mcp._tool_manager._tools.items():
+        for tool_name, tool in get_mcp_tools_dict(mcp).items():
             # Get the function signature
             import inspect
 
@@ -253,7 +255,7 @@ class TestEndToEndFlows:
 
             async with lifespan(mock_app):
                 # Get the lights control tool
-                lights_tool = mcp._tool_manager._tools["lights_control"]
+                lights_tool = (await get_mcp_tools_dict_async(mcp))["lights_control"]
 
                 # Test list action
                 mock_hass_client.get_states.return_value = [
@@ -285,7 +287,7 @@ class TestEndToEndFlows:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                climate_tool = mcp._tool_manager._tools["climate_control"]
+                climate_tool = (await get_mcp_tools_dict_async(mcp))["climate_control"]
 
                 # Test list action
                 mock_hass_client.get_states.return_value = [
@@ -315,7 +317,7 @@ class TestEndToEndFlows:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                switch_tool = mcp._tool_manager._tools["switch_control"]
+                switch_tool = (await get_mcp_tools_dict_async(mcp))["switch_control"]
 
                 # Test list action
                 mock_hass_client.get_states.return_value = [
@@ -343,7 +345,7 @@ class TestEndToEndFlows:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                automation_tool = mcp._tool_manager._tools["automation_control"]
+                automation_tool = (await get_mcp_tools_dict_async(mcp))["automation_control"]
 
                 # Test list action
                 mock_hass_client.get_states.return_value = [
@@ -375,17 +377,17 @@ class TestEndToEndFlows:
             async with lifespan(mock_app):
                 # Simulate a "movie time" scenario
                 # 1. Turn off lights
-                lights_tool = mcp._tool_manager._tools["lights_control"]
+                lights_tool = (await get_mcp_tools_dict_async(mcp))["lights_control"]
                 result = await lights_tool.fn(action="turn_off", entity_id="light.living_room")
                 assert result["success"] is True
 
                 # 2. Close covers
-                cover_tool = mcp._tool_manager._tools["cover_control"]
+                cover_tool = (await get_mcp_tools_dict_async(mcp))["cover_control"]
                 result = await cover_tool.fn(action="close", entity_id="cover.living_room_blinds")
                 assert result["success"] is True
 
                 # 3. Activate scene
-                scene_tool = mcp._tool_manager._tools["scene_control"]
+                scene_tool = (await get_mcp_tools_dict_async(mcp))["scene_control"]
                 result = await scene_tool.fn(action="activate", scene_id="scene.movie_time")
                 assert result["success"] is True
 
@@ -409,7 +411,7 @@ class TestErrorHandlingConsistency:
 
             async with lifespan(mock_app):
                 # Test lights tool
-                lights_tool = mcp._tool_manager._tools["lights_control"]
+                lights_tool = (await get_mcp_tools_dict_async(mcp))["lights_control"]
                 result = await lights_tool.fn(action="get", entity_id="light.nonexistent")
                 assert result["success"] is False
                 assert "error" in result
@@ -432,7 +434,7 @@ class TestErrorHandlingConsistency:
 
             async with lifespan(mock_app):
                 # Test switch tool
-                switch_tool = mcp._tool_manager._tools["switch_control"]
+                switch_tool = (await get_mcp_tools_dict_async(mcp))["switch_control"]
                 result = await switch_tool.fn(action="turn_on", entity_id="switch.kitchen")
                 assert result["success"] is False
                 assert "error" in result
@@ -455,7 +457,7 @@ class TestErrorHandlingConsistency:
 
             async with lifespan(mock_app):
                 # Test climate tool
-                climate_tool = mcp._tool_manager._tools["climate_control"]
+                climate_tool = (await get_mcp_tools_dict_async(mcp))["climate_control"]
                 result = await climate_tool.fn(action="list")
                 assert result["success"] is False
                 assert "error" in result
@@ -478,7 +480,7 @@ class TestErrorHandlingConsistency:
 
             async with lifespan(mock_app):
                 # Test fan tool
-                fan_tool = mcp._tool_manager._tools["fan_control"]
+                fan_tool = (await get_mcp_tools_dict_async(mcp))["fan_control"]
                 result = await fan_tool.fn(action="turn_on", entity_id="fan.bedroom")
                 assert result["success"] is False
                 assert "error" in result
@@ -501,7 +503,7 @@ class TestErrorHandlingConsistency:
 
             async with lifespan(mock_app):
                 # Test vacuum tool
-                vacuum_tool = mcp._tool_manager._tools["vacuum_control"]
+                vacuum_tool = (await get_mcp_tools_dict_async(mcp))["vacuum_control"]
                 result = await vacuum_tool.fn(action="list")
                 assert result["success"] is False
                 assert "error" in result
@@ -529,7 +531,7 @@ class TestErrorHandlingConsistency:
                 ]
 
                 for tool_name, params in tools_to_test:
-                    tool = mcp._tool_manager._tools[tool_name]
+                    tool = (await get_mcp_tools_dict_async(mcp))[tool_name]
                     result = await tool.fn(**params)
 
                     # All error responses should have these fields
@@ -555,7 +557,7 @@ class TestToolParameterValidation:
 
             async with lifespan(mock_app):
                 # Test lights tool without entity_id for turn_on
-                lights_tool = mcp._tool_manager._tools["lights_control"]
+                lights_tool = (await get_mcp_tools_dict_async(mcp))["lights_control"]
 
                 # This should fail validation or return error
                 try:
@@ -577,7 +579,7 @@ class TestToolParameterValidation:
 
             async with lifespan(mock_app):
                 # Test lights tool with wrong domain prefix
-                lights_tool = mcp._tool_manager._tools["lights_control"]
+                lights_tool = (await get_mcp_tools_dict_async(mcp))["lights_control"]
                 result = await lights_tool.fn(
                     action="turn_on", entity_id="switch.kitchen"  # Wrong domain
                 )
@@ -590,7 +592,7 @@ class TestToolDocumentation:
 
     def test_all_tools_have_examples_in_docstring(self):
         """Test that tool functions have usage examples in docstrings."""
-        for tool_name, tool in mcp._tool_manager._tools.items():
+        for tool_name, tool in get_mcp_tools_dict(mcp).items():
             # Get the function docstring
             docstring = tool.fn.__doc__
 
@@ -616,7 +618,7 @@ class TestToolDocumentation:
         }
 
         for tool_name, domain_keyword in domain_tools.items():
-            tool = mcp._tool_manager._tools[tool_name]
+            tool = get_mcp_tools_dict(mcp)[tool_name]
             description = tool.description.lower()
 
             # Description should mention the domain or related concept
@@ -641,9 +643,10 @@ class TestConcurrentOperations:
 
             async with lifespan(mock_app):
                 # Prepare multiple tool calls
-                lights_tool = mcp._tool_manager._tools["lights_control"]
-                switch_tool = mcp._tool_manager._tools["switch_control"]
-                climate_tool = mcp._tool_manager._tools["climate_control"]
+                tools_dict = await get_mcp_tools_dict_async(mcp)
+                lights_tool = tools_dict["lights_control"]
+                switch_tool = tools_dict["switch_control"]
+                climate_tool = tools_dict["climate_control"]
 
                 mock_hass_client.get_states.return_value = []
 
@@ -677,7 +680,7 @@ class TestToolResponseFormat:
                 tools_to_test = ["lights_control", "switch_control", "climate_control"]
 
                 for tool_name in tools_to_test:
-                    tool = mcp._tool_manager._tools[tool_name]
+                    tool = (await get_mcp_tools_dict_async(mcp))[tool_name]
                     result = await tool.fn(action="list")
 
                     # All success responses should have 'success' field
@@ -710,7 +713,7 @@ class TestToolResponseFormat:
                 tools_to_test = ["lights_control", "switch_control", "climate_control"]
 
                 for tool_name in tools_to_test:
-                    tool = mcp._tool_manager._tools[tool_name]
+                    tool = (await get_mcp_tools_dict_async(mcp))[tool_name]
                     result = await tool.fn(action="list")
 
                     assert result["success"] is True

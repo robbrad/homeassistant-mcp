@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.homeassistant_mcp.server import lifespan, mcp
+from tests.conftest import get_mcp_prompts_dict, get_mcp_prompts_dict_async
 
 
 @pytest.fixture
@@ -76,7 +77,7 @@ class TestPromptRegistration:
             "troubleshoot_device",
         }
 
-        registered_prompts = set(mcp._prompt_manager._prompts.keys())
+        registered_prompts = set(get_mcp_prompts_dict(mcp).keys())
 
         # Check all expected prompts are present
         missing_prompts = expected_prompts - registered_prompts
@@ -89,7 +90,7 @@ class TestPromptRegistration:
 
     def test_prompt_naming_consistency(self):
         """Test that all prompts follow consistent naming conventions."""
-        for prompt_name in mcp._prompt_manager._prompts.keys():
+        for prompt_name in get_mcp_prompts_dict(mcp).keys():
             # Prompt names should use underscores, not hyphens
             assert (
                 "-" not in prompt_name
@@ -102,7 +103,7 @@ class TestPromptRegistration:
 
     def test_all_prompts_have_metadata(self):
         """Test that all prompts have proper metadata."""
-        for prompt_name, prompt in mcp._prompt_manager._prompts.items():
+        for prompt_name, prompt in get_mcp_prompts_dict(mcp).items():
             # Check description exists and is not empty
             assert prompt.description is not None, f"Prompt {prompt_name} missing description"
             assert len(prompt.description) > 10, f"Prompt {prompt_name} has too short description"
@@ -115,7 +116,7 @@ class TestPromptRegistration:
 
     def test_prompt_descriptions_are_informative(self):
         """Test that prompt descriptions provide useful information."""
-        for prompt_name, prompt in mcp._prompt_manager._prompts.items():
+        for prompt_name, prompt in get_mcp_prompts_dict(mcp).items():
             description = prompt.description.lower()
 
             # Description should be substantial
@@ -138,8 +139,8 @@ class TestPromptTags:
         control_prompts = ["control_entity", "control_area"]
 
         for prompt_name in control_prompts:
-            if prompt_name in mcp._prompt_manager._prompts:
-                prompt = mcp._prompt_manager._prompts[prompt_name]
+            if prompt_name in get_mcp_prompts_dict(mcp):
+                prompt = get_mcp_prompts_dict(mcp)[prompt_name]
                 # Skip if tags are not implemented yet
                 if len(prompt.tags) > 0:
                     assert (
@@ -151,8 +152,8 @@ class TestPromptTags:
         explain_prompts = ["explain_entity", "troubleshoot_device"]
 
         for prompt_name in explain_prompts:
-            if prompt_name in mcp._prompt_manager._prompts:
-                prompt = mcp._prompt_manager._prompts[prompt_name]
+            if prompt_name in get_mcp_prompts_dict(mcp):
+                prompt = get_mcp_prompts_dict(mcp)[prompt_name]
                 # Skip if tags are not implemented yet
                 if len(prompt.tags) > 0:
                     assert (
@@ -164,8 +165,8 @@ class TestPromptTags:
         automation_prompts = ["create_automation", "diagnose_automation", "suggest_automation"]
 
         for prompt_name in automation_prompts:
-            if prompt_name in mcp._prompt_manager._prompts:
-                prompt = mcp._prompt_manager._prompts[prompt_name]
+            if prompt_name in get_mcp_prompts_dict(mcp):
+                prompt = get_mcp_prompts_dict(mcp)[prompt_name]
                 # Skip if tags are not implemented yet
                 if len(prompt.tags) > 0:
                     assert (
@@ -177,8 +178,8 @@ class TestPromptTags:
         status_prompts = ["home_status_brief", "optimize_energy", "security_check"]
 
         for prompt_name in status_prompts:
-            if prompt_name in mcp._prompt_manager._prompts:
-                prompt = mcp._prompt_manager._prompts[prompt_name]
+            if prompt_name in get_mcp_prompts_dict(mcp):
+                prompt = get_mcp_prompts_dict(mcp)[prompt_name]
                 # Skip if tags are not implemented yet
                 if len(prompt.tags) > 0:
                     assert (
@@ -190,8 +191,8 @@ class TestPromptTags:
         safety_prompts = ["safety_policy", "security_check"]
 
         for prompt_name in safety_prompts:
-            if prompt_name in mcp._prompt_manager._prompts:
-                prompt = mcp._prompt_manager._prompts[prompt_name]
+            if prompt_name in get_mcp_prompts_dict(mcp):
+                prompt = get_mcp_prompts_dict(mcp)[prompt_name]
                 # Skip if tags are not implemented yet
                 if len(prompt.tags) > 0:
                     assert (
@@ -212,8 +213,8 @@ class TestPromptInvocation:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                if "control_entity" in mcp._prompt_manager._prompts:
-                    prompt = mcp._prompt_manager._prompts["control_entity"]
+                if "control_entity" in (await get_mcp_prompts_dict_async(mcp)):
+                    prompt = (await get_mcp_prompts_dict_async(mcp))["control_entity"]
 
                     # Invoke the prompt
                     result = await prompt.fn(entity_id="light.living_room")
@@ -233,8 +234,8 @@ class TestPromptInvocation:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                if "explain_entity" in mcp._prompt_manager._prompts:
-                    prompt = mcp._prompt_manager._prompts["explain_entity"]
+                if "explain_entity" in (await get_mcp_prompts_dict_async(mcp)):
+                    prompt = (await get_mcp_prompts_dict_async(mcp))["explain_entity"]
 
                     # Invoke the prompt
                     result = await prompt.fn(entity_id="light.living_room")
@@ -254,8 +255,8 @@ class TestPromptInvocation:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                if "home_status_brief" in mcp._prompt_manager._prompts:
-                    prompt = mcp._prompt_manager._prompts["home_status_brief"]
+                if "home_status_brief" in (await get_mcp_prompts_dict_async(mcp)):
+                    prompt = (await get_mcp_prompts_dict_async(mcp))["home_status_brief"]
 
                     # Invoke the prompt (no parameters required)
                     result = await prompt.fn()
@@ -275,8 +276,8 @@ class TestPromptInvocation:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                if "safety_policy" in mcp._prompt_manager._prompts:
-                    prompt = mcp._prompt_manager._prompts["safety_policy"]
+                if "safety_policy" in (await get_mcp_prompts_dict_async(mcp)):
+                    prompt = (await get_mcp_prompts_dict_async(mcp))["safety_policy"]
 
                     # Invoke the prompt (no parameters required)
                     result = await prompt.fn()
@@ -293,16 +294,16 @@ class TestPromptListingStability:
     def test_prompt_listing_is_deterministic(self):
         """Test that listing prompts returns same order on multiple calls."""
         # Get prompt list twice
-        first_list = list(mcp._prompt_manager._prompts.keys())
-        second_list = list(mcp._prompt_manager._prompts.keys())
+        first_list = list(get_mcp_prompts_dict(mcp).keys())
+        second_list = list(get_mcp_prompts_dict(mcp).keys())
 
         # Should be identical
         assert first_list == second_list, "Prompt listing is not deterministic"
 
     def test_prompt_count_is_stable(self):
         """Test that prompt count doesn't change between calls."""
-        first_count = len(mcp._prompt_manager._prompts)
-        second_count = len(mcp._prompt_manager._prompts)
+        first_count = len(get_mcp_prompts_dict(mcp))
+        second_count = len(get_mcp_prompts_dict(mcp))
 
         assert first_count == second_count, "Prompt count is not stable"
 
@@ -312,7 +313,7 @@ class TestPromptDocumentation:
 
     def test_all_prompts_have_docstrings(self):
         """Test that prompt functions have docstrings."""
-        for prompt_name, prompt in mcp._prompt_manager._prompts.items():
+        for prompt_name, prompt in get_mcp_prompts_dict(mcp).items():
             # Get the function docstring
             docstring = prompt.fn.__doc__
 
@@ -335,8 +336,8 @@ class TestPromptDocumentation:
         }
 
         for prompt_name, keywords in purpose_keywords.items():
-            if prompt_name in mcp._prompt_manager._prompts:
-                prompt = mcp._prompt_manager._prompts[prompt_name]
+            if prompt_name in get_mcp_prompts_dict(mcp):
+                prompt = get_mcp_prompts_dict(mcp)[prompt_name]
                 description = prompt.description.lower()
 
                 # Description should contain at least one keyword
@@ -359,8 +360,8 @@ class TestPromptParameterValidation:
 
             async with lifespan(mock_app):
                 # Test control_entity without entity_id
-                if "control_entity" in mcp._prompt_manager._prompts:
-                    prompt = mcp._prompt_manager._prompts["control_entity"]
+                if "control_entity" in (await get_mcp_prompts_dict_async(mcp)):
+                    prompt = (await get_mcp_prompts_dict_async(mcp))["control_entity"]
 
                     # This should fail validation
                     try:
@@ -381,8 +382,8 @@ class TestPromptParameterValidation:
 
             async with lifespan(mock_app):
                 # Test control_entity with and without optional action parameter
-                if "control_entity" in mcp._prompt_manager._prompts:
-                    prompt = mcp._prompt_manager._prompts["control_entity"]
+                if "control_entity" in (await get_mcp_prompts_dict_async(mcp)):
+                    prompt = (await get_mcp_prompts_dict_async(mcp))["control_entity"]
 
                     # Should work without optional parameter
                     result1 = await prompt.fn(entity_id="light.living_room")

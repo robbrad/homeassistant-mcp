@@ -268,6 +268,49 @@ def sample_scene_states():
     ]
 
 
+def get_mcp_tools_dict(mcp_instance):
+    """Get a dict of {name: tool} from a FastMCP instance, compatible with v2 and v3."""
+    if hasattr(mcp_instance, "_tool_manager"):
+        return dict(mcp_instance._tool_manager._tools)
+    import asyncio
+    tools = asyncio.get_event_loop().run_until_complete(mcp_instance.list_tools())
+    return {t.name: t for t in tools}
+
+
+def get_mcp_prompts_dict(mcp_instance):
+    """Get a dict of {name: prompt} from a FastMCP instance, compatible with v2 and v3."""
+    if hasattr(mcp_instance, "_prompt_manager"):
+        return dict(mcp_instance._prompt_manager._prompts)
+    import asyncio
+    prompts = asyncio.get_event_loop().run_until_complete(mcp_instance.list_prompts())
+    return {p.name: p for p in prompts}
+
+
+def get_mcp_resources_dict(mcp_instance):
+    """Get a dict of {uri: resource} from a FastMCP instance, compatible with v2 and v3."""
+    if hasattr(mcp_instance, "_resource_manager"):
+        return dict(mcp_instance._resource_manager._resources)
+    import asyncio
+    resources = asyncio.get_event_loop().run_until_complete(mcp_instance.list_resources())
+    return {str(r.uri): r for r in resources}
+
+
+async def get_mcp_tools_dict_async(mcp_instance):
+    """Async version of get_mcp_tools_dict."""
+    if hasattr(mcp_instance, "_tool_manager"):
+        return dict(mcp_instance._tool_manager._tools)
+    tools = await mcp_instance.list_tools()
+    return {t.name: t for t in tools}
+
+
+async def get_mcp_prompts_dict_async(mcp_instance):
+    """Async version of get_mcp_prompts_dict."""
+    if hasattr(mcp_instance, "_prompt_manager"):
+        return dict(mcp_instance._prompt_manager._prompts)
+    prompts = await mcp_instance.list_prompts()
+    return {p.name: p for p in prompts}
+
+
 @pytest.fixture
 def mock_fastmcp():
     """Create a mock FastMCP instance for tool registration testing."""

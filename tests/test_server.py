@@ -7,6 +7,12 @@ import pytest
 
 from src.homeassistant_mcp.config import reset_settings
 from src.homeassistant_mcp.server import get_client, lifespan, mcp, setup_logging
+from tests.conftest import (
+    get_mcp_prompts_dict,
+    get_mcp_resources_dict,
+    get_mcp_tools_dict,
+    get_mcp_tools_dict_async,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -200,8 +206,7 @@ class TestMCPServer:
 
     def test_mcp_server_has_lifespan(self):
         """Test that MCP server has lifespan configured."""
-        # The lifespan should be set - check using the internal property
-        assert mcp._has_lifespan is True
+        assert mcp._lifespan is not None
 
 
 class TestToolRegistration:
@@ -215,7 +220,7 @@ class TestToolRegistration:
             "services_control",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
         assert expected_core_tools.issubset(
             registered_tools
         ), f"Missing core tools: {expected_core_tools - registered_tools}"
@@ -226,7 +231,7 @@ class TestToolRegistration:
             "states_control",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
         assert expected_state_tools.issubset(
             registered_tools
         ), f"Missing state tools: {expected_state_tools - registered_tools}"
@@ -239,7 +244,7 @@ class TestToolRegistration:
             "error_log_get",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
         assert expected_history_tools.issubset(
             registered_tools
         ), f"Missing history tools: {expected_history_tools - registered_tools}"
@@ -254,7 +259,7 @@ class TestToolRegistration:
             "intent_handle",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
         assert expected_specialized_tools.issubset(
             registered_tools
         ), f"Missing specialized tools: {expected_specialized_tools - registered_tools}"
@@ -279,7 +284,7 @@ class TestToolRegistration:
             "script_control",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
         assert expected_device_tools.issubset(
             registered_tools
         ), f"Missing device tools: {expected_device_tools - registered_tools}"
@@ -287,7 +292,7 @@ class TestToolRegistration:
     def test_tool_count(self):
         """Test that the correct number of tools are registered."""
         # Count all registered tools
-        tool_count = len(mcp._tool_manager._tools)
+        tool_count = len(get_mcp_tools_dict(mcp))
 
         # We expect at least 40 tools (all new + existing, minus 4 removed config tools)
         assert tool_count >= 40, f"Expected at least 40 tools, got {tool_count}"
@@ -303,7 +308,7 @@ class TestToolRegistration:
 
             async with lifespan(mock_app):
                 # Test that we can get a tool and it has the expected structure
-                lights_tool = mcp._tool_manager._tools.get("lights_control")
+                lights_tool = (await get_mcp_tools_dict_async(mcp)).get("lights_control")
                 assert lights_tool is not None
                 assert callable(lights_tool.fn)
 
@@ -313,7 +318,7 @@ class TestToolRegistration:
 
     def test_each_tool_has_description(self):
         """Test that each registered tool has a description."""
-        for tool_name, tool in mcp._tool_manager._tools.items():
+        for tool_name, tool in get_mcp_tools_dict(mcp).items():
             assert tool.description is not None, f"Tool {tool_name} is missing a description"
             assert len(tool.description) > 0, f"Tool {tool_name} has an empty description"
 
@@ -333,7 +338,7 @@ class TestToolRegistration:
             "get_automation_config",
         }
 
-        registered_tools = set(mcp._tool_manager._tools.keys())
+        registered_tools = set(get_mcp_tools_dict(mcp).keys())
 
         # Verify none of the removed tools are registered
         found_removed_tools = removed_tools.intersection(registered_tools)
@@ -348,7 +353,7 @@ class TestResourceRegistration:
     def test_services_resource_is_registered(self):
         """Test that the services resource is registered."""
         # Get registered resource templates from the MCP server
-        registered_resources = set(mcp._resource_manager._resources.keys())
+        registered_resources = set(get_mcp_resources_dict(mcp).keys())
 
         assert "hass://services" in registered_resources, "Services resource not registered"
 
@@ -357,11 +362,11 @@ class TestResourceRegistration:
         # We expect at least 1 resource (services)
         # Note: Entity, area, and device resources use URI templates with path parameters
         # which may be registered differently by FastMCP
-        assert len(mcp._resource_manager._resources) >= 1
+        assert len(get_mcp_resources_dict(mcp)) >= 1
 
     def test_each_resource_has_handler(self):
         """Test that each registered resource has a handler function."""
-        for resource_uri, resource in mcp._resource_manager._resources.items():
+        for resource_uri, resource in get_mcp_resources_dict(mcp).items():
             assert resource.fn is not None, f"Resource {resource_uri} is missing a handler"
             assert callable(resource.fn), f"Resource {resource_uri} handler is not callable"
 
@@ -381,7 +386,7 @@ class TestPromptRegistration:
         }
 
         # Get registered prompts from the MCP server
-        registered_prompts = set(mcp._prompt_manager._prompts.keys())
+        registered_prompts = set(get_mcp_prompts_dict(mcp).keys())
 
         assert expected_prompts.issubset(
             registered_prompts
@@ -391,16 +396,16 @@ class TestPromptRegistration:
         """Test that the correct number of prompts are registered."""
         # We expect 13 prompts: 6 legacy + 7 new (control_entity, control_area,
         # explain_entity, diagnose_automation, suggest_automation, home_status_brief, safety_policy)
-        assert len(mcp._prompt_manager._prompts) == 13
+        assert len(get_mcp_prompts_dict(mcp)) == 13
 
     def test_each_prompt_has_handler(self):
         """Test that each registered prompt has a handler function."""
-        for prompt_name, prompt in mcp._prompt_manager._prompts.items():
+        for prompt_name, prompt in get_mcp_prompts_dict(mcp).items():
             assert prompt.fn is not None, f"Prompt {prompt_name} is missing a handler"
             assert callable(prompt.fn), f"Prompt {prompt_name} handler is not callable"
 
     def test_each_prompt_has_description(self):
         """Test that each registered prompt has a description."""
-        for prompt_name, prompt in mcp._prompt_manager._prompts.items():
+        for prompt_name, prompt in get_mcp_prompts_dict(mcp).items():
             assert prompt.description is not None, f"Prompt {prompt_name} is missing a description"
             assert len(prompt.description) > 0, f"Prompt {prompt_name} has an empty description"
