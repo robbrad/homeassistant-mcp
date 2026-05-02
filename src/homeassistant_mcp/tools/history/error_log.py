@@ -1,6 +1,8 @@
 """Error log retrieval tool for Home Assistant MCP server."""
 
 import logging
+import re
+from collections import Counter
 from typing import Any
 
 from ...exceptions import (
@@ -13,6 +15,117 @@ from ...hass.client import HomeAssistantClient
 
 logger = logging.getLogger(__name__)
 
+# Matches HA log lines like:
+# 2024-01-15 10:30:45.123 ERROR (MainThread) [homeassistant.components.mqtt] Message
+# 2024-01-15 10:30:45 WARNING (MainThread) [custom_components.hacs] Message
+_LOG_LINE_RE = re.compile(
+    r"^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})(?:\.\d+)?\s+"
+    r"(ERROR|WARNING|CRITICAL|FATAL)\s+"
+    r"\([^)]*\)\s+"
+    r"\[([^\]]+)\]\s+"
+    r"(.+)$"
+)
+
+
+def _parse_log_entries(raw_log: str) -> list[dict[str, str]]:
+    """Parse raw HA log text into structured entries.
+
+    Each entry is a log line that starts with a timestamp + level.
+    Continuation lines (tracebacks) are attached to the preceding entry.
+    """
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
+
+    for line in raw_log.splitlines():
+        match = _LOG_LINE_RE.match(line)
+        if match:
+            # Save previous entry
+            if current is not None:
+                entries.append(current)
+            current = {
+                "timestamp": match.group(1),
+                "level": match.group(2),
+                "component": match.group(3),
+                "message": match.group(4),
+                "traceback": "",
+            }
+        elif current is not None:
+            # Continuation / traceback line
+            if current["traceback"]:
+                current["traceback"] += "\n" + line
+            else:
+                current["traceback"] = line
+
+    if current is not None:
+        entries.append(current)
+
+    return entries
+
+
+def _summarise_entries(
+    entries: list[dict[str, str]], max_unique: int = 30
+) -> dict[str, Any]:
+    """Build a compact summary from parsed log entries.
+
+    Groups by component, deduplicates repeated messages, and keeps
+    only the most recent occurrence of each unique error.
+    """
+    # Count by level
+    level_counts = Counter(e["level"] for e in entries)
+
+    # Group by component
+    by_component: dict[str, list[dict[str, str]]] = {}
+    for entry in entries:
+        by_component.setdefault(entry["component"], []).append(entry)
+
+    component_counts = {comp: len(items) for comp, items in by_component.items()}
+
+    # Deduplicate: keep last occurrence of each (component, message_prefix)
+    seen: dict[tuple[str, str], dict[str, str]] = {}
+    for entry in entries:
+        # Use first 120 chars of message as dedup key
+        key = (entry["component"], entry["message"][:120])
+        seen[key] = entry  # last occurrence wins
+
+    unique_entries = list(seen.values())
+
+    # Sort by timestamp descending (most recent first)
+    unique_entries.sort(key=lambda e: e["timestamp"], reverse=True)
+
+    # Trim to max_unique
+    truncated = len(unique_entries) > max_unique
+    unique_entries = unique_entries[:max_unique]
+
+    # Format each entry compactly
+    formatted = []
+    for entry in unique_entries:
+        item: dict[str, str] = {
+            "time": entry["timestamp"],
+            "level": entry["level"],
+            "component": entry["component"],
+            "message": entry["message"][:200],
+        }
+        # Include first 3 lines of traceback if present
+        if entry["traceback"]:
+            tb_lines = entry["traceback"].strip().splitlines()
+            # Get the last line (usually the actual exception) and a couple of context lines
+            if len(tb_lines) > 3:
+                item["traceback_tail"] = "\n".join(tb_lines[-3:])
+            else:
+                item["traceback_tail"] = "\n".join(tb_lines)
+        formatted.append(item)
+
+    return {
+        "total_entries": len(entries),
+        "unique_errors": len(seen),
+        "level_counts": dict(level_counts),
+        "top_components": dict(
+            Counter(component_counts).most_common(10)
+        ),
+        "truncated": truncated,
+        "recent_errors": formatted,
+    }
+
 
 def register_error_log_tool(mcp: Any, get_client: Any) -> None:
     """Register the error log retrieval tool with the FastMCP server.
@@ -24,69 +137,72 @@ def register_error_log_tool(mcp: Any, get_client: Any) -> None:
 
     @mcp.tool()
     async def error_log_get(
-        max_length: int = 5000,
+        max_entries: int = 30,
     ) -> dict:
-        """Retrieve Home Assistant error logs.
+        """Retrieve and summarise Home Assistant error logs.
 
-        This tool retrieves the error log from Home Assistant as plain text.
-        The error log contains Python exceptions, warnings, and error messages from
-        Home Assistant core and integrations.
-
-        The log is truncated to max_length characters to prevent context overflow.
-        Only the most recent entries (end of log) are returned.
+        Parses the raw error log into structured entries, deduplicates repeated
+        messages, and returns a compact summary with the most recent unique
+        errors. Much smaller than the raw log — safe for AI assistant context.
 
         Use this tool to:
         - Diagnose problems with Home Assistant
-        - Monitor system health
+        - Monitor system health and spot recurring errors
         - Troubleshoot integration issues
         - Debug automation failures
 
         Args:
-            max_length: Maximum characters to return (default 5000, max 20000).
-                        Returns the most recent log entries (tail of log).
+            max_entries: Maximum unique error entries to return (default 30, max 100).
 
         Returns:
             Dictionary containing:
                 - success: Boolean indicating success
-                - log_size: Total size of the log in bytes
-                - returned_size: Size of the returned portion
-                - truncated: Whether the log was truncated
-                - has_errors: Boolean indicating if log contains content
-                - error_log: The error log text (truncated to max_length)
+                - log_size: Total raw log size in bytes
+                - summary: Parsed summary with:
+                    - total_entries: Total log entries found
+                    - unique_errors: Count of deduplicated errors
+                    - level_counts: {"ERROR": N, "WARNING": M, ...}
+                    - top_components: Top 10 components by error count
+                    - recent_errors: List of most recent unique errors, each with
+                      time, level, component, message, and traceback_tail
         """
         client: HomeAssistantClient = get_client()
 
-        # Clamp max_length
-        max_length = max(500, min(max_length, 20000))
+        max_entries = max(5, min(max_entries, 100))
 
         try:
             logger.info("Retrieving Home Assistant error log")
 
-            # Call the client method to get error log
-            error_log = await client.get_error_log()
+            raw_log = await client.get_error_log()
+            log_size = len(raw_log) if raw_log else 0
 
-            # Calculate log size
-            log_size = len(error_log) if error_log else 0
-            has_errors = log_size > 0
-            truncated = log_size > max_length
+            if not raw_log or not raw_log.strip():
+                return {
+                    "success": True,
+                    "log_size": 0,
+                    "summary": {
+                        "total_entries": 0,
+                        "unique_errors": 0,
+                        "level_counts": {},
+                        "top_components": {},
+                        "truncated": False,
+                        "recent_errors": [],
+                    },
+                }
 
-            # Truncate to tail (most recent entries)
-            if truncated:
-                error_log = "... [truncated, showing last {} chars of {}] ...\n{}".format(
-                    max_length, log_size, error_log[-max_length:]
-                )
+            entries = _parse_log_entries(raw_log)
+            summary = _summarise_entries(entries, max_unique=max_entries)
 
             logger.info(
-                f"Retrieved error log ({log_size} bytes, truncated={truncated})"
+                f"Parsed error log: {log_size} bytes, "
+                f"{summary['total_entries']} entries, "
+                f"{summary['unique_errors']} unique"
             )
 
             return {
                 "success": True,
                 "log_size": log_size,
-                "returned_size": len(error_log),
-                "truncated": truncated,
-                "has_errors": has_errors,
-                "error_log": error_log,
+                "summary": summary,
             }
 
         except AuthenticationError as e:
