@@ -23,7 +23,7 @@ def valid_env_vars(monkeypatch):
 
 @pytest.fixture
 def clear_env_vars(monkeypatch):
-    """Clear all relevant environment variables."""
+    """Clear all relevant environment variables and prevent .env file loading."""
     env_vars = [
         "HASS_HOST",
         "HASS_TOKEN",
@@ -35,6 +35,11 @@ def clear_env_vars(monkeypatch):
     ]
     for var in env_vars:
         monkeypatch.delenv(var, raising=False)
+    # Prevent pydantic-settings from reading the real .env file
+    monkeypatch.setattr(
+        "homeassistant_mcp.config.Settings.model_config",
+        {**Settings.model_config, "env_file": None},
+    )
 
 
 class TestSettingsValidation:
