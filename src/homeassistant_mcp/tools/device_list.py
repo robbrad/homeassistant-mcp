@@ -2,7 +2,7 @@
 
 import logging
 from collections import defaultdict
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -76,54 +76,13 @@ def register_devices_tool(mcp: Any, get_client: Any) -> None:
     @mcp.tool()
     async def list_devices(
         domain: Annotated[
-            Literal[
-                "air_quality",
-                "alarm_control_panel",
-                "assist_satellite",
-                "binary_sensor",
-                "button",
-                "calendar",
-                "camera",
-                "climate",
-                "conversation",
-                "cover",
-                "date",
-                "datetime",
-                "device_tracker",
-                "event",
-                "fan",
-                "geo_location",
-                "humidifier",
-                "image",
-                "image_processing",
-                "lawn_mower",
-                "light",
-                "lock",
-                "media_player",
-                "notify",
-                "number",
-                "remote",
-                "scene",
-                "select",
-                "sensor",
-                "siren",
-                "stt",
-                "switch",
-                "tag",
-                "text",
-                "time",
-                "todo",
-                "tts",
-                "update",
-                "vacuum",
-                "valve",
-                "wake_word",
-                "water_heater",
-                "weather",
-            ]
-            | None,
+            str | None,
             Field(
-                description="Filter devices by domain (e.g., 'light', 'switch', 'sensor'). If not specified, returns all devices."
+                description=(
+                    "Filter devices by domain (e.g., 'light', 'switch', 'sensor', "
+                    "'automation', 'script', 'input_boolean'). "
+                    "If not specified, returns all devices."
+                )
             ),
         ] = None,
         area: Annotated[
