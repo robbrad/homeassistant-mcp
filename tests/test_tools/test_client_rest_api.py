@@ -394,7 +394,7 @@ class TestGetStatesFiltering:
 
     @pytest.mark.asyncio
     async def test_get_states_default_limit(self, hass_client, mock_httpx_client):
-        """Test default limit of 100 entities (Requirement 21.1)."""
+        """Test default limit — no limit when unfiltered up to 500."""
         mock_response = Mock()
         # Create 200 entities
         entities = [{"entity_id": f"light.light_{i}", "state": "on"} for i in range(200)]
@@ -403,8 +403,8 @@ class TestGetStatesFiltering:
 
         result = await hass_client.get_states()
 
-        # Should default to 100 entities
-        assert len(result) == 100
+        # Without filters, default limit is 500 — 200 entities should all be returned
+        assert len(result) == 200
 
     @pytest.mark.asyncio
     async def test_get_states_max_limit_500(self, hass_client, mock_httpx_client):

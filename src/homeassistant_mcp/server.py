@@ -35,7 +35,6 @@ from .tools import (
     register_lock_tool,
     register_media_player_tool,
     register_notify_tool,
-    register_old_history_tool,
     register_scene_tool,
     register_script_tool,
     register_siren_tool,
@@ -183,9 +182,6 @@ register_state_tools(mcp, get_client)
 
 # Historical data tools (new)
 register_history_tools(mcp, get_client)
-
-# Old history tool (for backward compatibility)
-register_old_history_tool(mcp, get_client)
 
 # Specialized tools
 register_camera_proxy_tool(mcp, get_client)

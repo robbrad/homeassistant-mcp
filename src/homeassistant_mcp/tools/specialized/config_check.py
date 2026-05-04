@@ -67,20 +67,43 @@ def register_config_check_tool(mcp: Any, get_client: Any) -> None:
             logger.info("Checking Home Assistant configuration")
             result = await client.check_config()
 
-            # Extract validation results
-            # Home Assistant returns different formats, normalize them
-            errors = result.get("errors", [])
-            warnings = result.get("warnings", [])
+            # Handle None or unexpected response
+            if result is None:
+                return {
+                    "success": True,
+                    "result": "unknown",
+                    "errors": [],
+                    "warnings": [],
+                    "message": "Configuration check returned no data. This may not be supported on your HA installation.",
+                }
 
-            # Determine if configuration is valid
+            # Extract validation results — HA returns different formats
+            if isinstance(result, str):
+                # Some HA versions return plain text
+                return {
+                    "success": True,
+                    "result": "valid" if "valid" in result.lower() else "unknown",
+                    "errors": [],
+                    "warnings": [],
+                    "raw_result": result,
+                }
+
+            errors = result.get("errors") or []
+            warnings = result.get("warnings") or []
+
+            # Normalize to lists
+            if isinstance(errors, str):
+                errors = [errors] if errors else []
+            if isinstance(warnings, str):
+                warnings = [warnings] if warnings else []
+
             is_valid = len(errors) == 0
 
             return {
                 "success": True,
                 "result": "valid" if is_valid else "invalid",
-                "errors": errors if isinstance(errors, list) else [str(errors)],
-                "warnings": warnings if isinstance(warnings, list) else [str(warnings)],
-                "details": result,
+                "errors": errors,
+                "warnings": warnings,
             }
 
         except Exception as e:

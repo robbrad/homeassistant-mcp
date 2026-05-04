@@ -39,7 +39,6 @@ from .helpers import (
     register_input_text_tool,
 )
 from .history import register_history_tools  # New history tools
-from .history_legacy import register_history_tool as register_old_history_tool  # Old history tool
 from .notify import register_notify_tool
 from .state import register_state_tools
 
@@ -51,7 +50,6 @@ __all__ = [
     "register_automation_tool",
     "register_scene_tool",
     "register_notify_tool",
-    "register_old_history_tool",
     "register_history_tools",
     "register_control_tool",
     "register_state_tools",

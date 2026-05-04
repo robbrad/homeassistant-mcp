@@ -295,7 +295,7 @@ class TestToolRegistration:
         tool_count = len(get_mcp_tools_dict(mcp))
 
         # We expect at least 40 tools (all new + existing, minus 4 removed config tools)
-        assert tool_count >= 40, f"Expected at least 40 tools, got {tool_count}"
+        assert tool_count >= 39, f"Expected at least 39 tools, got {tool_count}"
 
     @pytest.mark.asyncio
     async def test_tools_are_executable(self, mock_env, mock_hass_client):

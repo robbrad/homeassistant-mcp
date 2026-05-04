@@ -387,7 +387,7 @@ class HomeAssistantClient:
         self,
         domain: str | None = None,
         area: str | None = None,
-        limit: int = 100,
+        limit: int | None = None,
     ) -> list[dict[str, Any]]:
         """Get all entity states from Home Assistant with filtering and caching.
 
@@ -397,7 +397,8 @@ class HomeAssistantClient:
         Args:
             domain: Optional domain filter (e.g., "light", "switch")
             area: Optional area filter (e.g., "Living Room")
-            limit: Maximum number of entities to return (default 100, max 500)
+            limit: Maximum number of entities to return. Defaults to None (no limit)
+                   when domain or area filter is provided, or 500 when unfiltered.
 
         Returns:
             List of entity state dictionaries, each containing:
@@ -480,14 +481,19 @@ class HomeAssistantClient:
             ]
             logger.debug(f"Filtered to {len(filtered_states)} entities in area '{area}'")
 
-        # Apply limit (max 500)
-        limit = min(limit, 500)
-        if len(filtered_states) > limit:
+        # Apply limit — default to no limit when filtered, 500 when unfiltered
+        has_filter = domain is not None or area is not None
+        if limit is None:
+            effective_limit = None if has_filter else 500
+        else:
+            effective_limit = min(limit, 500)
+
+        if effective_limit and len(filtered_states) > effective_limit:
             logger.warning(
                 f"Response truncated: {len(filtered_states)} entities found, "
-                f"returning first {limit}. Use more specific filters to see all results."
+                f"returning first {effective_limit}. Use more specific filters to see all results."
             )
-            filtered_states = filtered_states[:limit]
+            filtered_states = filtered_states[:effective_limit]
 
         # Track response size
         import sys

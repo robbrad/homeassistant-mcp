@@ -78,7 +78,6 @@ class TestToolRegistration:
             "automation_control",
             "scene_control",
             "send_notification",
-            "query_history",  # Old history tool
             "call_service",
             # "get_automation_config",  # Removed - no longer reading config files
             # Core tools
@@ -133,8 +132,8 @@ class TestToolRegistration:
         missing_tools = expected_tools - registered_tools
         assert not missing_tools, f"Missing tools: {missing_tools}"
 
-        # Verify exact count (44 tools - 4 removed config tools = 40 tools)
-        assert len(registered_tools) == 40, f"Expected 40 tools, got {len(registered_tools)}"
+        # Verify exact count (44 tools - 4 removed config tools - 1 removed legacy history = 39 tools)
+        assert len(registered_tools) == 39, f"Expected 39 tools, got {len(registered_tools)}"
 
     def test_tool_naming_consistency(self):
         """Test that all tools follow consistent naming conventions."""
@@ -143,7 +142,6 @@ class TestToolRegistration:
             "list_devices",
             "get_automation_config",
             "send_notification",
-            "query_history",
             "call_service",
             # New REST API tools
             "api_info",
@@ -217,7 +215,6 @@ class TestToolRegistration:
             "list_devices",
             "get_automation_config",
             "send_notification",
-            "query_history",
             "call_service",
             # New REST API tools without action parameter
             "history_query",
