@@ -50,7 +50,7 @@ class TestHomeStatusBriefPrompt:
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
         # Mock various entity states
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room",
                 "state": "on",
@@ -114,7 +114,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room",
                 "state": "on",
@@ -158,7 +158,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room",
                 "state": "on",
@@ -184,7 +184,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "lock.front_door",
                 "state": "locked",
@@ -217,7 +217,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "lock.front_door",
                 "state": "locked",
@@ -243,7 +243,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "binary_sensor.front_door",
                 "state": "on",  # Open
@@ -277,7 +277,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "climate.living_room",
                 "state": "heat",
@@ -314,7 +314,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "climate.living_room",
                 "state": "heat",
@@ -368,7 +368,7 @@ class TestHomeStatusBriefPrompt:
                 }
             )
 
-        mock_client.get_states.return_value = entities
+        mock_client._states_data = entities
 
         result = await home_status_brief()
         content = result[0].content.text
@@ -399,7 +399,7 @@ class TestHomeStatusBriefPrompt:
                 }
             )
 
-        mock_client.get_states.return_value = entities
+        mock_client._states_data = entities
 
         result = await home_status_brief()
         content = result[0].content.text
@@ -415,7 +415,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         result = await home_status_brief()
         content = result[0].content.text
@@ -430,7 +430,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.light1",
                 "state": "on",
@@ -485,7 +485,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room",
                 "state": "on",
@@ -506,7 +506,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "alarm_control_panel.home",
                 "state": "disarmed",
@@ -528,7 +528,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room",
                 "state": "on",
@@ -549,7 +549,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "sensor.sensor1",
                 "state": "on",
@@ -611,7 +611,7 @@ class TestHomeStatusBriefPrompt:
         register_status_prompts(mock_mcp, get_client)
         home_status_brief = mock_mcp._prompts["home_status_brief"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "automation.morning",
                 "state": "on",

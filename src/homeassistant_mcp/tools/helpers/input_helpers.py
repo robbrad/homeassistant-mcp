@@ -685,10 +685,7 @@ def register_input_datetime_tool(mcp: Any, get_client: Any) -> None:
 async def _list_input_booleans(client: HomeAssistantClient) -> dict:
     """List all input boolean entities."""
     logger.info("Listing all input boolean entities")
-    all_states = await client.get_states()
-    entities = [
-        state for state in all_states if state.get("entity_id", "").startswith("input_boolean.")
-    ]
+    entities = await client.get_states(domain="input_boolean")
 
     entity_list = []
     for entity in entities:
@@ -792,10 +789,7 @@ async def _toggle_input_boolean(client: HomeAssistantClient, entity_id: str) -> 
 async def _list_input_numbers(client: HomeAssistantClient) -> dict:
     """List all input number entities."""
     logger.info("Listing all input number entities")
-    all_states = await client.get_states()
-    entities = [
-        state for state in all_states if state.get("entity_id", "").startswith("input_number.")
-    ]
+    entities = await client.get_states(domain="input_number")
 
     entity_list = []
     for entity in entities:
@@ -928,10 +922,7 @@ async def _decrement_input_number(client: HomeAssistantClient, entity_id: str) -
 async def _list_input_selects(client: HomeAssistantClient) -> dict:
     """List all input select entities."""
     logger.info("Listing all input select entities")
-    all_states = await client.get_states()
-    entities = [
-        state for state in all_states if state.get("entity_id", "").startswith("input_select.")
-    ]
+    entities = await client.get_states(domain="input_select")
 
     entity_list = []
     for entity in entities:
@@ -1012,10 +1003,7 @@ async def _select_input_select_option(
 async def _list_input_texts(client: HomeAssistantClient) -> dict:
     """List all input text entities."""
     logger.info("Listing all input text entities")
-    all_states = await client.get_states()
-    entities = [
-        state for state in all_states if state.get("entity_id", "").startswith("input_text.")
-    ]
+    entities = await client.get_states(domain="input_text")
 
     entity_list = []
     for entity in entities:
@@ -1087,10 +1075,7 @@ async def _set_input_text_value(client: HomeAssistantClient, entity_id: str, val
 async def _list_input_datetimes(client: HomeAssistantClient) -> dict:
     """List all input datetime entities."""
     logger.info("Listing all input datetime entities")
-    all_states = await client.get_states()
-    entities = [
-        state for state in all_states if state.get("entity_id", "").startswith("input_datetime.")
-    ]
+    entities = await client.get_states(domain="input_datetime")
 
     entity_list = []
     for entity in entities:

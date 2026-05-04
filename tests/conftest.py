@@ -57,11 +57,28 @@ def mock_httpx_client():
 
 @pytest.fixture
 def mock_hass_client():
-    """Create a mock Home Assistant client with common methods."""
+    """Create a mock Home Assistant client with common methods.
+
+    The get_states mock respects the domain keyword argument to filter results,
+    matching the real client behavior. Tests populate data by setting:
+        mock_client._states_data = [entities...]
+    or the legacy pattern:
+        mock_client._states_data = [entities...]
+    """
     client = AsyncMock(spec=HomeAssistantClient)
 
+    # Mutable container for states data that side_effect reads from
+    client._states_data = []
+
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     # Set up default return values
-    client.get_states.return_value = []
     client.get_state.return_value = {
         "entity_id": "test.entity",
         "state": "on",

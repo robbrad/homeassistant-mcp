@@ -20,6 +20,15 @@ from src.homeassistant_mcp.tools.devices.switch import _list_switches, _turn_on_
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
     return client
 
 
@@ -71,7 +80,7 @@ class TestResourcesAndToolsCoexistence:
         Validates: Requirement 18.4
         """
         # Setup mock responses
-        mock_client.get_states.return_value = sample_states
+        mock_client._states_data = sample_states
 
         # Call multiple tool functions with the same client
         lights_result = await _list_lights(mock_client)
@@ -93,7 +102,7 @@ class TestResourcesAndToolsCoexistence:
         Validates: Requirement 18.5, 18.6
         """
         # Setup mock responses
-        mock_client.get_states.return_value = sample_states
+        mock_client._states_data = sample_states
         mock_client.call_service.return_value = {"success": True}
 
         # Run multiple tool operations concurrently
@@ -125,7 +134,7 @@ class TestResourcesAndToolsCoexistence:
         Validates: Requirement 18.6
         """
         # Setup mock responses
-        mock_client.get_states.return_value = sample_states
+        mock_client._states_data = sample_states
         mock_client.call_service.return_value = {"success": True}
 
         # Read state via tool
@@ -200,7 +209,7 @@ class TestResourcesAndToolsCoexistence:
         Validates: Requirement 18.4, 18.5
         """
         # Setup mock to track call count
-        mock_client.get_states.return_value = sample_states
+        mock_client._states_data = sample_states
 
         # First call via tool (should hit API)
         list_result_1 = await _list_lights(mock_client)
@@ -222,7 +231,7 @@ class TestResourcesAndToolsCoexistence:
         Validates: Requirement 18.5, 18.6
         """
         # Setup mock responses
-        mock_client.get_states.return_value = sample_states
+        mock_client._states_data = sample_states
         mock_client.call_service.return_value = {"success": True}
 
         # Create multiple concurrent operations
@@ -255,7 +264,7 @@ class TestResourcesAndToolsCoexistence:
         # Setup mock to raise error for one call but succeed for others
         from src.homeassistant_mcp.exceptions import ServiceCallError
 
-        mock_client.get_states.return_value = sample_states
+        mock_client._states_data = sample_states
         mock_client.call_service.side_effect = [
             ServiceCallError("Service call failed"),
             {"success": True},
@@ -283,7 +292,7 @@ class TestResourcesAndToolsCoexistence:
         Validates: Requirement 18.4
         """
         # Setup mock
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Call multiple tools
         await _list_lights(mock_client)

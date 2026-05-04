@@ -181,8 +181,7 @@ async def _list_sirens(client: HomeAssistantClient) -> dict:
     """List all siren entities."""
     logger.info("Listing all siren entities")
 
-    all_states = await client.get_states()
-    sirens = [state for state in all_states if state.get("entity_id", "").startswith("siren.")]
+    sirens = await client.get_states(domain="siren")
 
     siren_list = []
     for siren in sirens:

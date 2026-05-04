@@ -157,7 +157,7 @@ class TestParameterValidation:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Empty area_id should be handled gracefully
         result = await control_area("")
@@ -173,7 +173,7 @@ class TestParameterValidation:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Area IDs with special characters
         special_area_ids = [
@@ -197,7 +197,7 @@ class TestParameterValidation:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Empty goal should use default behavior
         result = await control_area("Living Room", goal="")
@@ -211,7 +211,7 @@ class TestParameterValidation:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Very long goal description
         long_goal = "Turn off all lights and " * 50
@@ -294,7 +294,7 @@ class TestParameterValidation:
         register_automation_prompts(mock_mcp, get_client)
         suggest_automation = mock_mcp._prompts["suggest_automation"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Empty intent should be handled gracefully
         result = await suggest_automation("")
@@ -311,7 +311,7 @@ class TestParameterValidation:
         register_automation_prompts(mock_mcp, get_client)
         suggest_automation = mock_mcp._prompts["suggest_automation"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Intent with special characters
         result = await suggest_automation("Turn on lights @ 6:00 PM & play music")
@@ -328,7 +328,7 @@ class TestParameterValidation:
         register_automation_prompts(mock_mcp, get_client)
         suggest_automation = mock_mcp._prompts["suggest_automation"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Empty constraints should use default behavior
         result = await suggest_automation("Turn on lights at sunset", constraints="")
@@ -361,7 +361,7 @@ class TestParameterTypeMismatches:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # None should be handled or raise appropriate error
         try:
@@ -402,7 +402,7 @@ class TestWhitespaceHandling:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         # Area ID with extra whitespace
         result = await control_area("  Living   Room  ")

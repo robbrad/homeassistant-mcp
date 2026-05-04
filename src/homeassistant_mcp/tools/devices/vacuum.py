@@ -217,9 +217,8 @@ async def _list_vacuums(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all vacuum entities")
 
-    # Get all states and filter for vacuums
-    all_states = await client.get_states()
-    vacuums = [state for state in all_states if state.get("entity_id", "").startswith("vacuum.")]
+    # Get all vacuum states
+    vacuums = await client.get_states(domain="vacuum")
 
     # Format the response
     vacuum_list = []

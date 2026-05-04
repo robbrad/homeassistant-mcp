@@ -182,9 +182,8 @@ async def _list_lights(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all light entities")
 
-    # Get all states and filter for lights
-    all_states = await client.get_states()
-    lights = [state for state in all_states if state.get("entity_id", "").startswith("light.")]
+    # Get all light states
+    lights = await client.get_states(domain="light")
 
     # Format the response
     light_list = []

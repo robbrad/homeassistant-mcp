@@ -15,6 +15,17 @@ from src.homeassistant_mcp.tools.control import _call_service
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 

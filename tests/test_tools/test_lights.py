@@ -21,6 +21,17 @@ from src.homeassistant_mcp.tools.devices.lights import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -75,7 +86,7 @@ class TestListLights:
     @pytest.mark.asyncio
     async def test_list_lights_success(self, mock_client, sample_light_states):
         """Test successfully listing all lights."""
-        mock_client.get_states.return_value = sample_light_states
+        mock_client._states_data = sample_light_states
 
         result = await _list_lights(mock_client)
 
@@ -104,7 +115,7 @@ class TestListLights:
     @pytest.mark.asyncio
     async def test_list_lights_empty(self, mock_client):
         """Test listing lights when no lights exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "switch.test",
                 "state": "on",
@@ -338,7 +349,7 @@ class TestLightsControlIntegration:
         """Test the lights_control function with list action."""
         from src.homeassistant_mcp.tools.devices.lights import register_lights_tool
 
-        mock_client.get_states.return_value = sample_light_states
+        mock_client._states_data = sample_light_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

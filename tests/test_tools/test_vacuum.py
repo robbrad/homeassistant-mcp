@@ -25,6 +25,17 @@ from src.homeassistant_mcp.tools.devices.vacuum import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -83,7 +94,7 @@ class TestListVacuums:
     @pytest.mark.asyncio
     async def test_list_vacuums_success(self, mock_client, sample_vacuum_states):
         """Test successfully listing all vacuums."""
-        mock_client.get_states.return_value = sample_vacuum_states
+        mock_client._states_data = sample_vacuum_states
 
         result = await _list_vacuums(mock_client)
 
@@ -111,7 +122,7 @@ class TestListVacuums:
     @pytest.mark.asyncio
     async def test_list_vacuums_empty(self, mock_client):
         """Test listing vacuums when no vacuums exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.test",
                 "state": "on",
@@ -128,7 +139,7 @@ class TestListVacuums:
     @pytest.mark.asyncio
     async def test_list_vacuums_without_optional_attributes(self, mock_client):
         """Test listing vacuums that don't have battery or fan speed."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "vacuum.simple",
                 "state": "cleaning",
@@ -401,7 +412,7 @@ class TestVacuumControlIntegration:
         """Test the vacuum_control function with list action."""
         from src.homeassistant_mcp.tools.devices.vacuum import register_vacuum_tool
 
-        mock_client.get_states.return_value = sample_vacuum_states
+        mock_client._states_data = sample_vacuum_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

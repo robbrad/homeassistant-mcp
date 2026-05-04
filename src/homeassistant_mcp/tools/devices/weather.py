@@ -153,11 +153,8 @@ async def _list_weather_entities(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all weather entities")
 
-    # Get all states and filter for weather entities
-    all_states = await client.get_states()
-    weather_entities = [
-        state for state in all_states if state.get("entity_id", "").startswith("weather.")
-    ]
+    # Get all weather entity states
+    weather_entities = await client.get_states(domain="weather")
 
     # Format the response
     entity_list = []

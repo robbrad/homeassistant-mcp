@@ -29,7 +29,7 @@ def mock_hass_client():
     client = AsyncMock()
 
     # Default successful responses
-    client.get_states.return_value = [
+    client._states_data = [
         {
             "entity_id": "light.living_room",
             "state": "on",

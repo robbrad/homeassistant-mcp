@@ -20,6 +20,17 @@ from src.homeassistant_mcp.tools.devices.weather import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -144,7 +155,7 @@ class TestListWeatherEntities:
     @pytest.mark.asyncio
     async def test_list_weather_entities_success(self, mock_client, sample_weather_states):
         """Test successfully listing all weather entities."""
-        mock_client.get_states.return_value = sample_weather_states
+        mock_client._states_data = sample_weather_states
 
         result = await _list_weather_entities(mock_client)
 
@@ -174,7 +185,7 @@ class TestListWeatherEntities:
     @pytest.mark.asyncio
     async def test_list_weather_entities_empty(self, mock_client):
         """Test listing weather entities when none exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "sensor.temperature",
                 "state": "72",
@@ -372,7 +383,7 @@ class TestWeatherControlIntegration:
         """Test the weather_control function with list action."""
         from src.homeassistant_mcp.tools.devices.weather import register_weather_tool
 
-        mock_client.get_states.return_value = sample_weather_states
+        mock_client._states_data = sample_weather_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

@@ -203,7 +203,7 @@ class TestControlAreaPrompt:
         control_area = mock_mcp._prompts["control_area"]
 
         # Mock entities in area
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room_ceiling",
                 "state": "on",
@@ -247,7 +247,7 @@ class TestControlAreaPrompt:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.bedroom_light",
                 "state": "on",
@@ -267,7 +267,7 @@ class TestControlAreaPrompt:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.garage_light",
                 "state": "off",
@@ -300,7 +300,7 @@ class TestControlAreaPrompt:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         result = await control_area("Empty Room")
 
@@ -328,7 +328,7 @@ class TestControlAreaPrompt:
         control_area = mock_mcp._prompts["control_area"]
 
         # Only 2 entities (below threshold of 3)
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.kitchen_light",
                 "state": "on",
@@ -368,7 +368,7 @@ class TestControlAreaPrompt:
         control_area = mock_mcp._prompts["control_area"]
 
         # Include noisy devices
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.bedroom_light",
                 "state": "off",
@@ -544,7 +544,7 @@ class TestControlAreaEdgeCases:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.entry_light",
                 "state": "on",
@@ -584,7 +584,7 @@ class TestControlAreaEdgeCases:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.light1",
                 "state": "on",
@@ -626,7 +626,7 @@ class TestControlAreaEdgeCases:
                 }
             )
 
-        mock_client.get_states.return_value = entities
+        mock_client._states_data = entities
 
         result = await control_area("Large Room")
 
@@ -644,7 +644,7 @@ class TestControlAreaEdgeCases:
         register_control_prompts(mock_mcp, get_client)
         control_area = mock_mcp._prompts["control_area"]
 
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.unnamed_light",
                 "state": "on",

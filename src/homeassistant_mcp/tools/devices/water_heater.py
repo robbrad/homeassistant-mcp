@@ -238,10 +238,7 @@ async def _list_water_heaters(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all water heater entities")
 
-    all_states = await client.get_states()
-    water_heaters = [
-        state for state in all_states if state.get("entity_id", "").startswith("water_heater.")
-    ]
+    water_heaters = await client.get_states(domain="water_heater")
 
     water_heater_list = []
     for wh in water_heaters:

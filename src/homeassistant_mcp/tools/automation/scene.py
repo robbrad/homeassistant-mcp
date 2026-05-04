@@ -123,9 +123,8 @@ async def _list_scenes(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all scene entities")
 
-    # Get all states and filter for scenes
-    all_states = await client.get_states()
-    scenes = [state for state in all_states if state.get("entity_id", "").startswith("scene.")]
+    # Get all scene states
+    scenes = await client.get_states(domain="scene")
 
     # Format the response
     scene_list = []

@@ -154,10 +154,7 @@ async def _list_lawn_mowers(client: HomeAssistantClient) -> dict:
     """List all lawn mower entities."""
     logger.info("Listing all lawn mower entities")
 
-    all_states = await client.get_states()
-    lawn_mowers = [
-        state for state in all_states if state.get("entity_id", "").startswith("lawn_mower.")
-    ]
+    lawn_mowers = await client.get_states(domain="lawn_mower")
 
     lawn_mower_list = []
     for mower in lawn_mowers:

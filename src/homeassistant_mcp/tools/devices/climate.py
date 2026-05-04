@@ -213,11 +213,8 @@ async def _list_climate_devices(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all climate entities")
 
-    # Get all states and filter for climate devices
-    all_states = await client.get_states()
-    climate_devices = [
-        state for state in all_states if state.get("entity_id", "").startswith("climate.")
-    ]
+    # Get all climate device states
+    climate_devices = await client.get_states(domain="climate")
 
     # Format the response
     device_list = []

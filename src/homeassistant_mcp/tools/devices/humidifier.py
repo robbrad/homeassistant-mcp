@@ -197,10 +197,7 @@ async def _list_humidifiers(client: HomeAssistantClient) -> dict:
     """List all humidifier entities."""
     logger.info("Listing all humidifier entities")
 
-    all_states = await client.get_states()
-    humidifiers = [
-        state for state in all_states if state.get("entity_id", "").startswith("humidifier.")
-    ]
+    humidifiers = await client.get_states(domain="humidifier")
 
     humidifier_list = []
     for hum in humidifiers:

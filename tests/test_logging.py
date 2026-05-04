@@ -254,7 +254,7 @@ class TestServerLogging:
         # Mock the client initialization
         with patch("homeassistant_mcp.server.HomeAssistantClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client.get_states.return_value = [{"entity_id": "light.test"}]
+            mock_client._states_data = [{"entity_id": "light.test"}]
             mock_client_class.return_value = mock_client
 
             # Just verify the lifespan completes without errors

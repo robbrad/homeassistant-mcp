@@ -23,6 +23,17 @@ from src.homeassistant_mcp.tools.automation.automation import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -76,7 +87,7 @@ class TestListAutomations:
     @pytest.mark.asyncio
     async def test_list_automations_success(self, mock_client, sample_automation_states):
         """Test successfully listing all automations."""
-        mock_client.get_states.return_value = sample_automation_states
+        mock_client._states_data = sample_automation_states
 
         result = await _list_automations(mock_client)
 
@@ -106,7 +117,7 @@ class TestListAutomations:
     @pytest.mark.asyncio
     async def test_list_automations_empty(self, mock_client):
         """Test listing automations when no automations exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.test",
                 "state": "on",
@@ -286,7 +297,7 @@ class TestAutomationControlIntegration:
         """Test the automation_control function with list action."""
         from src.homeassistant_mcp.tools.automation.automation import register_automation_tool
 
-        mock_client.get_states.return_value = sample_automation_states
+        mock_client._states_data = sample_automation_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

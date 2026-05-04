@@ -197,7 +197,7 @@ class TestBackwardCompatibilityProperties:
 
         # Create a mock client
         mock_client = AsyncMock(spec=HomeAssistantClient)
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.test",
                 "state": "on",

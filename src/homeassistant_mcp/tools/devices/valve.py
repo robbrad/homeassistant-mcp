@@ -195,8 +195,7 @@ async def _list_valves(client: HomeAssistantClient) -> dict:
     """List all valve entities."""
     logger.info("Listing all valve entities")
 
-    all_states = await client.get_states()
-    valves = [state for state in all_states if state.get("entity_id", "").startswith("valve.")]
+    valves = await client.get_states(domain="valve")
 
     valve_list = []
     for valve in valves:

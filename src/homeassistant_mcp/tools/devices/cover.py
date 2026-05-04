@@ -235,9 +235,8 @@ async def _list_covers(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all cover entities")
 
-    # Get all states and filter for covers
-    all_states = await client.get_states()
-    covers = [state for state in all_states if state.get("entity_id", "").startswith("cover.")]
+    # Get all cover states
+    covers = await client.get_states(domain="cover")
 
     # Format the response
     cover_list = []

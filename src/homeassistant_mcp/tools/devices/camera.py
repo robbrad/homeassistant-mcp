@@ -208,9 +208,8 @@ async def _list_cameras(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all camera entities")
 
-    # Get all states and filter for cameras
-    all_states = await client.get_states()
-    cameras = [state for state in all_states if state.get("entity_id", "").startswith("camera.")]
+    # Get all camera states
+    cameras = await client.get_states(domain="camera")
 
     # Format the response
     camera_list = []

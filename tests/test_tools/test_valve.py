@@ -24,6 +24,17 @@ from src.homeassistant_mcp.tools.devices.valve import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -67,7 +78,7 @@ class TestListValves:
     @pytest.mark.asyncio
     async def test_list_valves_success(self, mock_client, sample_valve_states):
         """Test successfully listing all valves."""
-        mock_client.get_states.return_value = sample_valve_states
+        mock_client._states_data = sample_valve_states
 
         result = await _list_valves(mock_client)
 
@@ -86,7 +97,7 @@ class TestListValves:
     @pytest.mark.asyncio
     async def test_list_valves_empty(self, mock_client):
         """Test listing valves when no valves exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "cover.test",
                 "state": "open",
@@ -305,7 +316,7 @@ class TestValveControlIntegration:
         """Test the valve_control function with list action."""
         from src.homeassistant_mcp.tools.devices.valve import register_valve_tool
 
-        mock_client.get_states.return_value = sample_valve_states
+        mock_client._states_data = sample_valve_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

@@ -187,9 +187,8 @@ async def _list_switches(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all switch entities")
 
-    # Get all states and filter for switches
-    all_states = await client.get_states()
-    switches = [state for state in all_states if state.get("entity_id", "").startswith("switch.")]
+    # Get all switch states
+    switches = await client.get_states(domain="switch")
 
     # Format the response
     switch_list = []

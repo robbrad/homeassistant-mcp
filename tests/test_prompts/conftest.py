@@ -45,7 +45,7 @@ def mock_client():
         "state": "on",
         "attributes": {},
     }
-    client.get_states.return_value = []
+    client._states_data = []
     client.call_service.return_value = {}
 
     return client

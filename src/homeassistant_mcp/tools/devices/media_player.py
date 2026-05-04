@@ -299,11 +299,8 @@ async def _list_media_players(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all media player entities")
 
-    # Get all states and filter for media players
-    all_states = await client.get_states()
-    media_players = [
-        state for state in all_states if state.get("entity_id", "").startswith("media_player.")
-    ]
+    # Get all media player states
+    media_players = await client.get_states(domain="media_player")
 
     # Format the response
     player_list = []

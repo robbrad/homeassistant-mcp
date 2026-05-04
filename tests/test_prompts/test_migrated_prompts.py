@@ -46,7 +46,7 @@ class TestMigratedPrompts:
         """Test climate prompt returns list of PromptMessage."""
         from homeassistant_mcp.prompts.climate import register_climate_prompt
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         register_climate_prompt(mock_mcp, get_client)
         optimize_climate = mock_mcp._prompts["optimize_climate"]
@@ -64,7 +64,7 @@ class TestMigratedPrompts:
         """Test energy prompt returns list of PromptMessage."""
         from homeassistant_mcp.prompts.energy import register_energy_prompt
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         register_energy_prompt(mock_mcp, get_client)
         optimize_energy = mock_mcp._prompts["optimize_energy"]
@@ -82,7 +82,7 @@ class TestMigratedPrompts:
         """Test scene prompt returns list of PromptMessage."""
         from homeassistant_mcp.prompts.scene import register_scene_prompt
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         register_scene_prompt(mock_mcp, get_client)
         create_scene = mock_mcp._prompts["create_scene"]
@@ -100,7 +100,7 @@ class TestMigratedPrompts:
         """Test security prompt returns list of PromptMessage."""
         from homeassistant_mcp.prompts.security import register_security_prompt
 
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         register_security_prompt(mock_mcp, get_client)
         security_check = mock_mcp._prompts["security_check"]

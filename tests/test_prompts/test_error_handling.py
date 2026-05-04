@@ -293,7 +293,7 @@ class TestGracefulDegradation:
     async def test_control_area_some_entities_unavailable(self, mock_mcp, get_client):
         """Test control_area handles areas with some unavailable entities."""
         client = AsyncMock()
-        client.get_states.return_value = [
+        client._states_data = [
             {
                 "entity_id": "light.working",
                 "state": "on",
@@ -354,7 +354,7 @@ class TestGracefulDegradation:
     async def test_home_status_brief_empty_home(self, mock_mcp, get_client):
         """Test home_status_brief handles homes with no entities."""
         client = AsyncMock()
-        client.get_states.return_value = []  # No entities
+        client._states_data = []  # No entities
         get_client_func = lambda: client
 
         register_status_prompts(mock_mcp, get_client_func)
@@ -471,7 +471,7 @@ class TestErrorRecovery:
         """Test control_area handles partial failures gracefully."""
         client = AsyncMock()
         # Returns some entities successfully
-        client.get_states.return_value = [
+        client._states_data = [
             {
                 "entity_id": "light.working",
                 "state": "on",

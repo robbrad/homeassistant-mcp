@@ -35,7 +35,7 @@ def mock_env(monkeypatch):
 def mock_hass_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock()
-    client.get_states.return_value = [
+    client._states_data = [
         {
             "entity_id": "light.living_room",
             "state": "on",
@@ -155,7 +155,7 @@ class TestLifespan:
         """Test that lifespan passes cache TTL settings to client."""
         with patch("src.homeassistant_mcp.server.HomeAssistantClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client.get_states.return_value = []
+            mock_client._states_data = []
             mock_client_class.return_value = mock_client
 
             mock_app = MagicMock()

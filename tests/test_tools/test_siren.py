@@ -22,6 +22,17 @@ from src.homeassistant_mcp.tools.devices.siren import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -65,7 +76,7 @@ class TestListSirens:
     @pytest.mark.asyncio
     async def test_list_sirens_success(self, mock_client, sample_siren_states):
         """Test successfully listing all sirens."""
-        mock_client.get_states.return_value = sample_siren_states
+        mock_client._states_data = sample_siren_states
 
         result = await _list_sirens(mock_client)
 
@@ -82,7 +93,7 @@ class TestListSirens:
     @pytest.mark.asyncio
     async def test_list_sirens_empty(self, mock_client):
         """Test listing sirens when no sirens exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "switch.test",
                 "state": "on",
@@ -304,7 +315,7 @@ class TestSirenControlIntegration:
         """Test the siren_control function with list action."""
         from src.homeassistant_mcp.tools.devices.siren import register_siren_tool
 
-        mock_client.get_states.return_value = sample_siren_states
+        mock_client._states_data = sample_siren_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

@@ -267,9 +267,8 @@ async def _list_fans(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all fan entities")
 
-    # Get all states and filter for fans
-    all_states = await client.get_states()
-    fans = [state for state in all_states if state.get("entity_id", "").startswith("fan.")]
+    # Get all fan states
+    fans = await client.get_states(domain="fan")
 
     # Format the response
     fan_list = []

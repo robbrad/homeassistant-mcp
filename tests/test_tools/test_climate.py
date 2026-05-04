@@ -12,6 +12,17 @@ from src.homeassistant_mcp.tools.devices.climate import register_climate_tool
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock()
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -35,7 +46,7 @@ def climate_control_func(mock_mcp, mock_client):
 async def test_list_climate_devices(mock_client):
     """Test listing all climate devices."""
     # Setup mock data
-    mock_client.get_states.return_value = [
+    mock_client._states_data = [
         {
             "entity_id": "climate.living_room",
             "state": "heat",
@@ -336,7 +347,7 @@ async def test_set_fan_mode_invalid_entity():
 @pytest.mark.asyncio
 async def test_climate_control_list_action(mock_client):
     """Test climate_control with list action."""
-    mock_client.get_states.return_value = [
+    mock_client._states_data = [
         {
             "entity_id": "climate.living_room",
             "state": "heat",

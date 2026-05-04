@@ -187,11 +187,9 @@ async def _list_automations(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all automation entities")
 
-    # Get all states and filter for automations
-    all_states = await client.get_states()
-    automations = [
-        state for state in all_states if state.get("entity_id", "").startswith("automation.")
-    ]
+    # Get all states filtered by automation domain
+    all_states = await client.get_states(domain="automation")
+    automations = all_states  # Already filtered by domain
 
     # Format the response
     automation_list = []

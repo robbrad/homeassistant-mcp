@@ -25,6 +25,17 @@ from src.homeassistant_mcp.tools.devices.fan import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -84,7 +95,7 @@ class TestListFans:
     @pytest.mark.asyncio
     async def test_list_fans_success(self, mock_client, sample_fan_states):
         """Test successfully listing all fans."""
-        mock_client.get_states.return_value = sample_fan_states
+        mock_client._states_data = sample_fan_states
 
         result = await _list_fans(mock_client)
 
@@ -117,7 +128,7 @@ class TestListFans:
     @pytest.mark.asyncio
     async def test_list_fans_empty(self, mock_client):
         """Test listing fans when no fans exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.test",
                 "state": "on",
@@ -134,7 +145,7 @@ class TestListFans:
     @pytest.mark.asyncio
     async def test_list_fans_without_optional_attributes(self, mock_client):
         """Test listing fans that don't have all optional attributes."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "fan.simple",
                 "state": "on",
@@ -468,7 +479,7 @@ class TestFanControlIntegration:
         """Test the fan_control function with list action."""
         from src.homeassistant_mcp.tools.devices.fan import register_fan_tool
 
-        mock_client.get_states.return_value = sample_fan_states
+        mock_client._states_data = sample_fan_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

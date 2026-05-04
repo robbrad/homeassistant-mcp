@@ -12,6 +12,17 @@ from src.homeassistant_mcp.tools.device_list import _list_and_filter_devices
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -139,7 +150,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_list_all_devices(self, mock_client, sample_device_states):
         """Test listing all devices without filters."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client)
 
@@ -167,7 +178,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_by_domain(self, mock_client, sample_device_states):
         """Test filtering devices by domain."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, domain="light")
 
@@ -188,7 +199,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_by_area(self, mock_client, sample_device_states):
         """Test filtering devices by area."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, area="Living Room")
 
@@ -211,7 +222,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_by_floor(self, mock_client, sample_device_states):
         """Test filtering devices by floor."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, floor="Ground Floor")
 
@@ -234,7 +245,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_by_domain_and_area(self, mock_client, sample_device_states):
         """Test filtering devices by both domain and area."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, domain="light", area="Living Room")
 
@@ -252,7 +263,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_by_domain_and_floor(self, mock_client, sample_device_states):
         """Test filtering devices by domain and floor."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, domain="light", floor="First Floor")
 
@@ -269,7 +280,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_by_all_criteria(self, mock_client, sample_device_states):
         """Test filtering devices by domain, area, and floor."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(
             mock_client, domain="light", area="Kitchen", floor="Ground Floor"
@@ -289,7 +300,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_filter_no_matches(self, mock_client, sample_device_states):
         """Test filtering with criteria that match no devices."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(
             mock_client, domain="light", area="Nonexistent Area"
@@ -303,7 +314,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_case_insensitive_area_filter(self, mock_client, sample_device_states):
         """Test that area filtering is case-insensitive."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, area="living room")
 
@@ -317,7 +328,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_case_insensitive_floor_filter(self, mock_client, sample_device_states):
         """Test that floor filtering is case-insensitive."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, floor="ground floor")
 
@@ -327,7 +338,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_device_statistics(self, mock_client, sample_device_states):
         """Test that device statistics are calculated correctly."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, domain="light")
 
@@ -345,7 +356,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_sample_devices_format(self, mock_client, sample_device_states):
         """Test that sample devices have correct format."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client, domain="light")
 
@@ -374,7 +385,7 @@ class TestListAndFilterDevices:
             for i in range(10)
         ]
 
-        mock_client.get_states.return_value = many_lights
+        mock_client._states_data = many_lights
 
         result = await _list_and_filter_devices(mock_client, domain="light")
 
@@ -396,7 +407,7 @@ class TestListAndFilterDevices:
             },
         ]
 
-        mock_client.get_states.return_value = devices_without_location
+        mock_client._states_data = devices_without_location
 
         result = await _list_and_filter_devices(mock_client)
 
@@ -422,7 +433,7 @@ class TestListAndFilterDevices:
             },
         ]
 
-        mock_client.get_states.return_value = devices_with_area_id
+        mock_client._states_data = devices_with_area_id
 
         result = await _list_and_filter_devices(mock_client, area="living_room")
 
@@ -432,7 +443,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_empty_entity_list(self, mock_client):
         """Test handling empty entity list."""
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
 
         result = await _list_and_filter_devices(mock_client)
 
@@ -457,7 +468,7 @@ class TestListAndFilterDevices:
             },
         ]
 
-        mock_client.get_states.return_value = invalid_entities
+        mock_client._states_data = invalid_entities
 
         result = await _list_and_filter_devices(mock_client)
 
@@ -467,7 +478,7 @@ class TestListAndFilterDevices:
     @pytest.mark.asyncio
     async def test_multiple_domains_grouping(self, mock_client, sample_device_states):
         """Test that devices are correctly grouped by domain."""
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         result = await _list_and_filter_devices(mock_client)
 
@@ -492,7 +503,7 @@ class TestListDevicesIntegration:
         """Test the list_devices tool registration and execution."""
         from src.homeassistant_mcp.tools.device_list import register_devices_tool
 
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()
@@ -523,7 +534,7 @@ class TestListDevicesIntegration:
         """Test list_devices with various filters."""
         from src.homeassistant_mcp.tools.device_list import register_devices_tool
 
-        mock_client.get_states.return_value = sample_device_states
+        mock_client._states_data = sample_device_states
 
         mock_mcp = MagicMock()
         registered_func = None

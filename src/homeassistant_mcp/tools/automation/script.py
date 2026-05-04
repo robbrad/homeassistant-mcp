@@ -158,9 +158,8 @@ async def _list_scripts(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all script entities")
 
-    # Get all states and filter for scripts
-    all_states = await client.get_states()
-    scripts = [state for state in all_states if state.get("entity_id", "").startswith("script.")]
+    # Get all script states
+    scripts = await client.get_states(domain="script")
 
     # Format the response
     script_list = []

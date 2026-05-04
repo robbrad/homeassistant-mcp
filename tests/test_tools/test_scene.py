@@ -16,6 +16,17 @@ from src.homeassistant_mcp.tools.automation.scene import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock()
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -68,7 +79,7 @@ class TestListScenes:
     @pytest.mark.asyncio
     async def test_list_scenes_success(self, mock_client, mock_states):
         """Test successfully listing all scenes."""
-        mock_client.get_states.return_value = mock_states
+        mock_client._states_data = mock_states
 
         result = await _list_scenes(mock_client)
 
@@ -92,7 +103,7 @@ class TestListScenes:
     @pytest.mark.asyncio
     async def test_list_scenes_empty(self, mock_client):
         """Test listing scenes when none exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.living_room",
                 "state": "on",
@@ -109,7 +120,7 @@ class TestListScenes:
     @pytest.mark.asyncio
     async def test_list_scenes_no_friendly_name(self, mock_client):
         """Test listing scenes without friendly names."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {"entity_id": "scene.test_scene", "state": "scening", "attributes": {}}
         ]
 
@@ -190,7 +201,7 @@ class TestSceneControlTool:
     @pytest.mark.asyncio
     async def test_scene_control_list(self, mock_mcp, mock_client, mock_states):
         """Test scene_control with list action."""
-        mock_client.get_states.return_value = mock_states
+        mock_client._states_data = mock_states
 
         # Create a real tool registration
         tool_func = None

@@ -35,7 +35,7 @@ def mock_hass_client():
     client = AsyncMock()
 
     # Default successful responses
-    client.get_states.return_value = [
+    client._states_data = [
         {
             "entity_id": "light.living_room",
             "state": "on",
@@ -255,7 +255,7 @@ class TestEndToEndFlows:
                 lights_tool = (await get_mcp_tools_dict_async(mcp))["lights_control"]
 
                 # Test list action
-                mock_hass_client.get_states.return_value = [
+                mock_hass_client._states_data = [
                     {
                         "entity_id": "light.living_room",
                         "state": "on",
@@ -287,7 +287,7 @@ class TestEndToEndFlows:
                 climate_tool = (await get_mcp_tools_dict_async(mcp))["climate_control"]
 
                 # Test list action
-                mock_hass_client.get_states.return_value = [
+                mock_hass_client._states_data = [
                     {
                         "entity_id": "climate.bedroom",
                         "state": "heat",
@@ -317,7 +317,7 @@ class TestEndToEndFlows:
                 switch_tool = (await get_mcp_tools_dict_async(mcp))["switch_control"]
 
                 # Test list action
-                mock_hass_client.get_states.return_value = [
+                mock_hass_client._states_data = [
                     {
                         "entity_id": "switch.kitchen",
                         "state": "off",
@@ -345,7 +345,7 @@ class TestEndToEndFlows:
                 automation_tool = (await get_mcp_tools_dict_async(mcp))["automation_control"]
 
                 # Test list action
-                mock_hass_client.get_states.return_value = [
+                mock_hass_client._states_data = [
                     {
                         "entity_id": "automation.morning_routine",
                         "state": "on",
@@ -396,7 +396,7 @@ class TestErrorHandlingConsistency:
     async def test_entity_not_found_error_handling(self, mock_env):
         """Test that all tools handle EntityNotFoundError consistently."""
         mock_client = AsyncMock()
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
         mock_client.get_state.side_effect = EntityNotFoundError("Entity not found")
         mock_client.close = AsyncMock()
 
@@ -419,7 +419,7 @@ class TestErrorHandlingConsistency:
     async def test_authentication_error_handling(self, mock_env):
         """Test that all tools handle AuthenticationError consistently."""
         mock_client = AsyncMock()
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
         mock_client.call_service.side_effect = AuthenticationError("Invalid token")
         mock_client.close = AsyncMock()
 
@@ -465,7 +465,7 @@ class TestErrorHandlingConsistency:
     async def test_service_call_error_handling(self, mock_env):
         """Test that all tools handle ServiceCallError consistently."""
         mock_client = AsyncMock()
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
         mock_client.call_service.side_effect = ServiceCallError("Service call failed")
         mock_client.close = AsyncMock()
 
@@ -509,7 +509,7 @@ class TestErrorHandlingConsistency:
     async def test_error_response_structure(self, mock_env):
         """Test that error responses have consistent structure."""
         mock_client = AsyncMock()
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
         mock_client.call_service.side_effect = ServiceCallError("Test error")
         mock_client.close = AsyncMock()
 
@@ -645,7 +645,7 @@ class TestConcurrentOperations:
                 switch_tool = tools_dict["switch_control"]
                 climate_tool = tools_dict["climate_control"]
 
-                mock_hass_client.get_states.return_value = []
+                mock_hass_client._states_data = []
 
                 # Execute concurrently
                 results = await asyncio.gather(
@@ -671,7 +671,7 @@ class TestToolResponseFormat:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                mock_hass_client.get_states.return_value = []
+                mock_hass_client._states_data = []
 
                 # Test multiple tools
                 tools_to_test = ["lights_control", "switch_control", "climate_control"]
@@ -698,7 +698,7 @@ class TestToolResponseFormat:
             mock_app = MagicMock()
 
             async with lifespan(mock_app):
-                mock_hass_client.get_states.return_value = [
+                mock_hass_client._states_data = [
                     {
                         "entity_id": "light.test",
                         "state": "on",

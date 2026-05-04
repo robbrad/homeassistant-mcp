@@ -159,9 +159,8 @@ async def _list_locks(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all lock entities")
 
-    # Get all states and filter for locks
-    all_states = await client.get_states()
-    locks = [state for state in all_states if state.get("entity_id", "").startswith("lock.")]
+    # Get all lock states
+    locks = await client.get_states(domain="lock")
 
     # Format the response
     lock_list = []

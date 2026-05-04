@@ -36,6 +36,17 @@ from src.homeassistant_mcp.tools.helpers.input_helpers import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -142,7 +153,7 @@ class TestListInputBooleans:
     @pytest.mark.asyncio
     async def test_list_input_booleans_success(self, mock_client, sample_input_boolean_states):
         """Test successfully listing all input booleans."""
-        mock_client.get_states.return_value = sample_input_boolean_states
+        mock_client._states_data = sample_input_boolean_states
         result = await _list_input_booleans(mock_client)
         assert result["success"] is True
         assert result["count"] == 2
@@ -151,7 +162,7 @@ class TestListInputBooleans:
     @pytest.mark.asyncio
     async def test_list_input_booleans_empty(self, mock_client):
         """Test listing input booleans when none exist."""
-        mock_client.get_states.return_value = []
+        mock_client._states_data = []
         result = await _list_input_booleans(mock_client)
         assert result["success"] is True
         assert result["count"] == 0
@@ -235,7 +246,7 @@ class TestListInputNumbers:
     @pytest.mark.asyncio
     async def test_list_input_numbers_success(self, mock_client, sample_input_number_states):
         """Test successfully listing all input numbers."""
-        mock_client.get_states.return_value = sample_input_number_states
+        mock_client._states_data = sample_input_number_states
         result = await _list_input_numbers(mock_client)
         assert result["success"] is True
         assert result["count"] == 2
@@ -347,7 +358,7 @@ class TestListInputSelects:
     @pytest.mark.asyncio
     async def test_list_input_selects_success(self, mock_client, sample_input_select_states):
         """Test successfully listing all input selects."""
-        mock_client.get_states.return_value = sample_input_select_states
+        mock_client._states_data = sample_input_select_states
         result = await _list_input_selects(mock_client)
         assert result["success"] is True
         assert result["count"] == 1
@@ -421,7 +432,7 @@ class TestListInputTexts:
     @pytest.mark.asyncio
     async def test_list_input_texts_success(self, mock_client, sample_input_text_states):
         """Test successfully listing all input texts."""
-        mock_client.get_states.return_value = sample_input_text_states
+        mock_client._states_data = sample_input_text_states
         result = await _list_input_texts(mock_client)
         assert result["success"] is True
         assert result["count"] == 1
@@ -475,7 +486,7 @@ class TestListInputDatetimes:
     @pytest.mark.asyncio
     async def test_list_input_datetimes_success(self, mock_client, sample_input_datetime_states):
         """Test successfully listing all input datetimes."""
-        mock_client.get_states.return_value = sample_input_datetime_states
+        mock_client._states_data = sample_input_datetime_states
         result = await _list_input_datetimes(mock_client)
         assert result["success"] is True
         assert result["count"] == 1

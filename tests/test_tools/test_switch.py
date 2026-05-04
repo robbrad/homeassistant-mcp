@@ -23,6 +23,17 @@ from src.homeassistant_mcp.tools.devices.switch import (
 def mock_client():
     """Create a mock Home Assistant client."""
     client = AsyncMock(spec=HomeAssistantClient)
+
+    # Domain-filtering side_effect for get_states
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client._states_data = []
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
+
     return client
 
 
@@ -73,7 +84,7 @@ class TestListSwitches:
     @pytest.mark.asyncio
     async def test_list_switches_success(self, mock_client, sample_switch_states):
         """Test successfully listing all switches."""
-        mock_client.get_states.return_value = sample_switch_states
+        mock_client._states_data = sample_switch_states
 
         result = await _list_switches(mock_client)
 
@@ -97,7 +108,7 @@ class TestListSwitches:
     @pytest.mark.asyncio
     async def test_list_switches_empty(self, mock_client):
         """Test listing switches when no switches exist."""
-        mock_client.get_states.return_value = [
+        mock_client._states_data = [
             {
                 "entity_id": "light.test",
                 "state": "on",
@@ -332,7 +343,7 @@ class TestSwitchControlIntegration:
         """Test the switch_control function with list action."""
         from src.homeassistant_mcp.tools.devices.switch import register_switch_tool
 
-        mock_client.get_states.return_value = sample_switch_states
+        mock_client._states_data = sample_switch_states
 
         # Create a mock FastMCP instance
         mock_mcp = MagicMock()

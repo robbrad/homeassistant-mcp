@@ -203,13 +203,8 @@ async def _list_alarms(client: HomeAssistantClient) -> dict:
     """
     logger.info("Listing all alarm control panel entities")
 
-    # Get all states and filter for alarm control panels
-    all_states = await client.get_states()
-    alarms = [
-        state
-        for state in all_states
-        if state.get("entity_id", "").startswith("alarm_control_panel.")
-    ]
+    # Get all alarm control panel states
+    alarms = await client.get_states(domain="alarm_control_panel")
 
     # Format the response
     alarm_list = []
