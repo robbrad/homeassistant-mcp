@@ -62,6 +62,10 @@ def register_lock_tool(mcp: Any, get_client: Any) -> None:
         - Unlock a door: lock_control(action="unlock", entity_id="lock.front_door")
         - Unlock with code: lock_control(action="unlock", entity_id="lock.front_door", code="1234")
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="lock")
+            or list_devices(domain="lock") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The lock entity ID (required for get, lock, unlock)

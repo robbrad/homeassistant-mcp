@@ -60,6 +60,9 @@ def register_config_check_tool(mcp: Any, get_client: Any) -> None:
 
         Note: This tool requires appropriate permissions in Home Assistant.
         Some installations may restrict configuration validation to administrators.
+
+        Note: This may not work on all HA installations. If it fails, try:
+            call_service(domain="homeassistant", service="check_config")
         """
         client = get_client()
 

@@ -67,6 +67,10 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
         - Bulk turn on: switch_control(action="turn_on", entity_ids=["switch.light1", "switch.light2"])
         - Bulk turn off: switch_control(action="turn_off", entity_ids=["switch.light1", "switch.light2"])
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="switch")
+            or list_devices(domain="switch") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The switch entity ID (required for get, turn_on, turn_off, toggle)

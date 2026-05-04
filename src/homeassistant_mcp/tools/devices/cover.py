@@ -81,6 +81,10 @@ def register_cover_tool(mcp: Any, get_client: Any) -> None:
         - Set position: cover_control(action="set_position", entity_id="cover.bedroom_blinds", position=50)
         - Set tilt: cover_control(action="set_tilt", entity_id="cover.living_room_blinds", tilt=75)
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="cover")
+            or list_devices(domain="cover") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The cover entity ID (required for most actions)

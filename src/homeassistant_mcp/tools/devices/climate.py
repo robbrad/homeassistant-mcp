@@ -86,6 +86,10 @@ def register_climate_tool(mcp: Any, get_client: Any) -> None:
         - Set temp range: climate_control(action="set_temperature", entity_id="climate.living_room", target_temp_high=75.0, target_temp_low=68.0)
         - Set fan mode: climate_control(action="set_fan_mode", entity_id="climate.living_room", fan_mode="auto")
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="climate")
+            or list_devices(domain="climate") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The climate entity ID (required for get, set_hvac_mode, set_temperature, set_fan_mode)

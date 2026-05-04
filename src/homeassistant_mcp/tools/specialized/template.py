@@ -49,6 +49,12 @@ def register_template_tool(mcp: Any, get_client: Any) -> None:
             # List all lights that are on
             template_render(template="{% for state in states.light %}{% if state.state == 'on' %}{{ state.name }}, {% endif %}{% endfor %}")
 
+        Common patterns:
+            - List entities by domain: template_render(template="{{ states.light | map(attribute='entity_id') | list }}")
+            - Check entity state: template_render(template="{{ states('sensor.temperature') }}")
+            - Count entities: template_render(template="{{ states.light | selectattr('state', 'eq', 'on') | list | count }}")
+            - Math on sensor: template_render(template="{{ (states('sensor.temp') | float * 1.8 + 32) | round(1) }}")
+
         Note: Templates are evaluated in the Home Assistant context with access to
         all entities, states, and template functions. Invalid syntax or references
         to unavailable entities will return an error.

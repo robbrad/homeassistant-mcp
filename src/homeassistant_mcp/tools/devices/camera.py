@@ -79,6 +79,10 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
                                                   entity_id="camera.front_door")
         - Get stream URL: camera_control(action="get_stream_url", entity_id="camera.front_door")
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="camera")
+            or list_devices(domain="camera") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The camera entity ID (required for most actions)

@@ -118,6 +118,10 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
         - Play media: media_player_control(action="play_media", entity_id="media_player.living_room",
                                           media_content_id="http://example.com/song.mp3", media_content_type="music")
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="media_player")
+            or list_devices(domain="media_player") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The media player entity ID (required for most actions)

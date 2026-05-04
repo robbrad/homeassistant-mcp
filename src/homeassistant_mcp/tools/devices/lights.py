@@ -80,6 +80,10 @@ def register_lights_tool(mcp: Any, get_client: Any) -> None:
         - Turn on with RGB: lights_control(action="turn_on", entity_id="light.living_room", rgb_color=(255, 0, 0))
         - Turn off light: lights_control(action="turn_off", entity_id="light.living_room")
 
+        Note: The list action returns entities from the HA states API. If some
+            entities are missing, use states_control(action="list", domain="light")
+            or list_devices(domain="light") for a more complete view.
+
         Args:
             action: The action to perform
             entity_id: The light entity ID (required for get, turn_on, turn_off)

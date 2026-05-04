@@ -45,6 +45,10 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
         This tool allows you to list all automations, toggle automations on/off,
         manually trigger automations, turn them on/off, and reload automation configuration.
 
+        Tip: If the list action returns fewer automations than expected, use
+            states_control(action="list", domain="automation") for a complete list
+            of all automation entities regardless of how they were created.
+
         Actions:
         - list: Get all automation entities with their current states and last triggered time
         - toggle: Enable or disable an automation
