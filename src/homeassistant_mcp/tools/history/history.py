@@ -1,6 +1,7 @@
 """History query tool for Home Assistant MCP server."""
 
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from pydantic import Field
@@ -26,128 +27,128 @@ def register_history_tool(mcp: Any, get_client: Any) -> None:
 
     @mcp.tool()
     async def history_query(
-        timestamp: Annotated[
+        entity_id: Annotated[
             str,
             Field(
                 description=(
-                    "ISO 8601 timestamp for the start of the history period. "
-                    "Example: '2024-01-15T10:00:00+00:00' or '2024-01-15T10:00:00Z'"
+                    "Entity ID to query history for. Required to prevent "
+                    "returning history for all entities. "
+                    "Example: 'sensor.temperature' or 'light.living_room'"
                 )
             ),
         ],
-        end_time: Annotated[
-            str | None,
+        hours: Annotated[
+            float,
             Field(
+                gt=0,
+                le=168,
                 description=(
-                    "Optional ISO 8601 timestamp for the end of the history period. "
-                    "If not provided, defaults to current time."
-                )
+                    "Number of hours of history to retrieve (default 24, max 168 / 7 days). "
+                    "Example: 1 for last hour, 24 for last day, 48 for last 2 days."
+                ),
             ),
-        ] = None,
-        filter_entity_id: Annotated[
-            list[str] | None,
-            Field(
-                description=(
-                    "Optional list of entity IDs to filter. HIGHLY RECOMMENDED for large installations. "
-                    "Example: ['sensor.temperature', 'light.living_room']"
-                )
-            ),
-        ] = None,
+        ] = 24,
         minimal_response: Annotated[
             bool,
             Field(
                 description="If True, return minimal data without attributes to reduce response size"
             ),
-        ] = False,
+        ] = True,
         limit: Annotated[
             int,
             Field(
                 ge=1,
                 le=500,
-                description="Maximum number of history entries per entity (default 100, max 500)",
+                description="Maximum number of history entries to return (default 50, max 500)",
             ),
-        ] = 100,
+        ] = 50,
     ) -> dict:
-        """Query historical state changes with filtering support.
+        """Query historical state changes for a specific entity.
 
-        ⚠️ IMPORTANT: History queries can return extensive data. For large Home Assistant
-        installations, ALWAYS use filter_entity_id to prevent context overflow.
-
-        This tool retrieves historical state changes for entities over a time period.
-        Without filtering, it may return data for ALL entities, which can easily exceed
-        AI assistant context limits.
-
-        FILTERING BEST PRACTICES:
-        1. Always specify filter_entity_id with specific entities when possible
-        2. Use shorter time ranges for unfiltered queries
-        3. Use minimal_response=True to reduce data size
-        4. Default limit is 100 entries per entity to prevent overwhelming responses
+        Returns state change history for the given entity over the specified
+        time period. Results are returned most-recent-first.
 
         Examples:
-        - Query specific sensor: history_query(
-            timestamp="2024-01-15T10:00:00Z",
-            filter_entity_id=["sensor.bedroom_temperature"]
-          )
-        - Query multiple entities: history_query(
-            timestamp="2024-01-15T10:00:00Z",
-            end_time="2024-01-15T12:00:00Z",
-            filter_entity_id=["light.living_room", "light.bedroom"]
-          )
-        - Minimal response: history_query(
-            timestamp="2024-01-15T10:00:00Z",
-            filter_entity_id=["sensor.temperature"],
-            minimal_response=True
-          )
+            # Last 24 hours for a sensor
+            history_query(entity_id="sensor.bedroom_temperature")
+
+            # Last 2 hours for a light
+            history_query(entity_id="light.living_room", hours=2)
+
+            # Last week with full attributes
+            history_query(entity_id="climate.thermostat", hours=168, minimal_response=False)
 
         Args:
-            timestamp: ISO 8601 timestamp for the start of the history period
-            end_time: Optional ISO 8601 timestamp for the end (defaults to now)
-            filter_entity_id: Optional list of entity IDs to filter (RECOMMENDED)
-            minimal_response: If True, return minimal data without attributes
-            limit: Maximum number of history entries per entity (default 100, max 500)
+            entity_id: Entity ID to query (required)
+            hours: Hours of history to look back (default 24, max 168)
+            minimal_response: Return minimal data without attributes (default True)
+            limit: Max entries to return (default 50, max 500)
 
         Returns:
             Dictionary containing:
                 - success: Boolean indicating success
-                - timestamp: Start timestamp used
-                - end_time: End timestamp used (or null)
-                - filter_entity_id: Entity filter used (or null)
-                - minimal_response: Whether minimal response was used
-                - limit: Limit applied per entity
-                - entity_count: Number of entities in response
-                - history: List of lists, one per entity, containing state dictionaries
+                - entity_id: The queried entity
+                - period: Human-readable time period
+                - entry_count: Number of state changes found
+                - history: List of state change records (most recent first)
         """
         client: HomeAssistantClient = get_client()
 
         try:
+            # Calculate timestamps from hours
+            now = datetime.now(timezone.utc)
+            start = now - timedelta(hours=hours)
+            timestamp = start.isoformat()
+            end_time = now.isoformat()
+
             logger.info(
-                f"Querying history from {timestamp}, "
-                f"filter={filter_entity_id}, limit={limit}, minimal={minimal_response}"
+                f"Querying history for {entity_id}, "
+                f"last {hours}h, limit={limit}, minimal={minimal_response}"
             )
 
-            # Call the client method with all parameters
             history_data = await client.get_history(
                 timestamp=timestamp,
                 end_time=end_time,
-                filter_entity_id=filter_entity_id,
+                filter_entity_id=[entity_id],
                 minimal_response=minimal_response,
                 limit=limit,
             )
 
-            # Count entities in response
-            entity_count = len(history_data) if history_data else 0
+            # Flatten — API returns list of lists, one per entity
+            entries = []
+            if history_data:
+                for entity_history in history_data:
+                    entries.extend(entity_history)
 
-            logger.info(f"Retrieved history data for {entity_count} entities")
+            # Sort most recent first
+            entries.sort(
+                key=lambda e: e.get("last_changed", ""),
+                reverse=True,
+            )
+
+            # Apply limit
+            truncated = len(entries) > limit
+            entries = entries[:limit]
+
+            # Build human-readable period string
+            if hours < 1:
+                period = f"last {int(hours * 60)} minutes"
+            elif hours == 1:
+                period = "last hour"
+            elif hours <= 48:
+                period = f"last {int(hours)} hours"
+            else:
+                period = f"last {hours / 24:.0f} days"
+
+            logger.info(f"Retrieved {len(entries)} history entries for {entity_id}")
 
             return {
                 "success": True,
-                "timestamp": timestamp,
-                "end_time": end_time,
-                "filter_entity_id": filter_entity_id,
-                "minimal_response": minimal_response,
-                "limit": limit,
-                "entity_count": entity_count,
-                "history": history_data,
+                "entity_id": entity_id,
+                "period": period,
+                "entry_count": len(entries),
+                "truncated": truncated,
+                "history": entries,
             }
 
         except AuthenticationError as e:
@@ -162,14 +163,6 @@ def register_history_tool(mcp: Any, get_client: Any) -> None:
         except HomeAssistantError as e:
             logger.error(f"Home Assistant error: {str(e)}")
             return {"error": str(e), "success": False, "error_type": "home_assistant_error"}
-        except ValueError as e:
-            # Handle invalid timestamp format
-            logger.warning(f"Invalid timestamp format: {str(e)}")
-            return {
-                "error": f"Invalid timestamp format: {str(e)}. Use ISO 8601 format like '2024-01-15T10:00:00Z'",
-                "success": False,
-                "error_type": "validation_error",
-            }
         except Exception as e:
             logger.error(f"Unexpected error in history_query: {str(e)}", exc_info=True)
             return {
