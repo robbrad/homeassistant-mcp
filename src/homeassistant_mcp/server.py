@@ -162,6 +162,7 @@ mcp = FastMCP(
                 "call_service",
                 "template_render",
                 "error_log_get",
+                "discover_tools",
             ],
         ),
     ],
@@ -237,6 +238,48 @@ register_all_resources(mcp, get_client)
 
 # Register all MCP prompts
 register_all_prompts(mcp, get_client)
+
+
+# Tool catalog for discovery — helps LLMs know what's available via search_tools
+_TOOL_CATALOG = """Available tools (use search_tools to find and call them):
+
+DEVICE CONTROL: lights_control, climate_control, switch_control, cover_control,
+  lock_control, media_player_control, camera_control, vacuum_control, fan_control,
+  alarm_control, water_heater_control, humidifier_control, siren_control,
+  valve_control, lawn_mower_control, weather_control
+
+AUTOMATION: automation_control, scene_control, script_control
+
+INPUT HELPERS: input_boolean_control, input_number_control, input_select_control,
+  input_text_control, input_datetime_control
+
+API & STATE: api_info, events_control, services_control, states_control
+
+HISTORY: history_query, logbook_query, error_log_get
+
+SPECIALIZED: calendar_access, camera_proxy_get, config_check, intent_handle,
+  template_render
+
+GENERAL: list_devices, call_service, send_notification
+"""
+
+
+@mcp.tool(
+    annotations={"readOnlyHint": True},
+    tags={"discovery"},
+    timeout=5,
+)
+def discover_tools() -> str:
+    """List all available Home Assistant MCP tools.
+
+    Returns a catalog of every tool available on this server, organized by
+    category. Use search_tools(query="...") to get full details and schemas
+    for any tool, then call_tool(name="...", arguments={...}) to execute it.
+
+    Categories: device control, automation, input helpers, API & state,
+    history, specialized, and general tools.
+    """
+    return _TOOL_CATALOG
 
 
 def main() -> None:

@@ -132,8 +132,8 @@ class TestToolRegistration:
         missing_tools = expected_tools - registered_tools
         assert not missing_tools, f"Missing tools: {missing_tools}"
 
-        # Verify exact count (44 tools - 4 removed config tools - 1 removed legacy history = 39 tools)
-        assert len(registered_tools) == 39, f"Expected 39 tools, got {len(registered_tools)}"
+        # Verify exact count (44 tools - 4 removed config tools - 1 removed legacy history + 1 discover_tools = 40 tools)
+        assert len(registered_tools) == 40, f"Expected 40 tools, got {len(registered_tools)}"
 
     def test_tool_naming_consistency(self):
         """Test that all tools follow consistent naming conventions."""
@@ -143,6 +143,7 @@ class TestToolRegistration:
             "get_automation_config",
             "send_notification",
             "call_service",
+            "discover_tools",
             # New REST API tools
             "api_info",
             "states_control",  # This one does follow the pattern
@@ -216,6 +217,7 @@ class TestToolRegistration:
             "get_automation_config",
             "send_notification",
             "call_service",
+            "discover_tools",
             # New REST API tools without action parameter
             "history_query",
             "logbook_query",
