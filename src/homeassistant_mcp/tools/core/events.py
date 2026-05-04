@@ -8,6 +8,8 @@ import logging
 from collections.abc import Callable
 from typing import Any, Literal
 
+from fastmcp import Context
+
 from ...exceptions import ServiceCallError
 
 logger = logging.getLogger(__name__)
@@ -21,11 +23,16 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"api", "event"},
+        timeout=30,
+    )
     async def events_control(
         action: Literal["list", "fire"],
         event_type: str | None = None,
         event_data: dict[str, Any] | None = None,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Manage Home Assistant events.
 
@@ -65,8 +72,14 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
 
         try:
             if action == "list":
+                if ctx:
+                    await ctx.info("Listing event types")
                 logger.info("Listing event types")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 events = await client.get_events()
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
                 return {"success": True, "action": "list", "data": events}
 
             elif action == "fire":
@@ -80,8 +93,14 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
                         f"Invalid event_type: must be a non-empty string, got {type(event_type).__name__}"
                     )
 
+                if ctx:
+                    await ctx.info(f"Firing event: {event_type}")
                 logger.info(f"Firing event: {event_type}")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 result = await client.fire_event(event_type, event_data)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 return {
                     "success": True,

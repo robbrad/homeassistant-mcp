@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_climate_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "climate"},
+        timeout=30,
+    )
     async def climate_control(
         action: Annotated[
             Literal["list", "get", "set_hvac_mode", "set_temperature", "set_fan_mode"],
@@ -65,6 +70,7 @@ def register_climate_tool(mcp: Any, get_client: Any) -> None:
             Literal["auto", "low", "medium", "high"] | None,
             Field(description="Fan mode to set. Only used with set_fan_mode action."),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control climate devices (thermostats, HVAC) in Home Assistant.
 
@@ -105,13 +111,26 @@ def register_climate_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing climate_control action={action}")
+
             if action == "list":
-                return await _list_climate_devices(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_climate_devices(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_climate_device(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_climate_device(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_hvac_mode":
                 if not entity_id:
@@ -124,7 +143,12 @@ def register_climate_tool(mcp: Any, get_client: Any) -> None:
                         "error": "hvac_mode is required for 'set_hvac_mode' action",
                         "success": False,
                     }
-                return await _set_hvac_mode(client, entity_id, hvac_mode)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_hvac_mode(client, entity_id, hvac_mode)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_temperature":
                 if not entity_id:
@@ -147,7 +171,12 @@ def register_climate_tool(mcp: Any, get_client: Any) -> None:
                         "error": "fan_mode is required for 'set_fan_mode' action",
                         "success": False,
                     }
-                return await _set_fan_mode(client, entity_id, fan_mode)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_fan_mode(client, entity_id, fan_mode)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

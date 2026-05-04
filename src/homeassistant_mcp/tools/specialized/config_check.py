@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from fastmcp import Context
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,8 +16,14 @@ def register_config_check_tool(mcp: Any, get_client: Any) -> None:
         get_client: Function that returns HomeAssistantClient instance
     """
 
-    @mcp.tool()
-    async def config_check() -> dict[str, Any]:
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"specialized", "read"},
+        timeout=30,
+    )
+    async def config_check(
+        ctx: Context = None,
+    ) -> dict[str, Any]:
         """Validate Home Assistant configuration without restarting.
 
         This tool triggers Home Assistant's configuration validation to check for
@@ -67,8 +75,14 @@ def register_config_check_tool(mcp: Any, get_client: Any) -> None:
         client = get_client()
 
         try:
+            if ctx:
+                await ctx.info("Checking Home Assistant configuration")
             logger.info("Checking Home Assistant configuration")
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             result = await client.check_config()
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
 
             # Handle None or unexpected response
             if result is None:

@@ -4,6 +4,8 @@ import base64
 import logging
 from typing import Any
 
+from fastmcp import Context
+
 from ...exceptions import HomeAssistantError
 
 logger = logging.getLogger(__name__)
@@ -17,12 +19,17 @@ def register_camera_proxy_tool(mcp: Any, get_client: Any) -> None:
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"specialized", "read"},
+        timeout=30,
+    )
     async def camera_proxy_get(
         entity_id: str,
         width: int | None = None,
         height: int | None = None,
         return_base64: bool = True,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Get camera image through Home Assistant proxy.
 
@@ -64,15 +71,24 @@ def register_camera_proxy_tool(mcp: Any, get_client: Any) -> None:
         try:
             client = get_client()
 
+            if ctx:
+                await ctx.info(
+                    f"Retrieving camera image for {entity_id} "
+                    f"(width={width}, height={height}, base64={return_base64})"
+                )
             logger.info(
                 f"Retrieving camera image for {entity_id} "
                 f"(width={width}, height={height}, base64={return_base64})"
             )
 
             # Get camera image from Home Assistant
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             image_bytes = await client.get_camera_proxy(
                 entity_id=entity_id, width=width, height=height
             )
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
 
             # Determine content type (Home Assistant typically returns JPEG)
             # In a real implementation, we could inspect the image header

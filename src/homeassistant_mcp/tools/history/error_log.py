@@ -5,6 +5,8 @@ import re
 from collections import Counter
 from typing import Any
 
+from fastmcp import Context
+
 from ...exceptions import (
     AuthenticationError,
     ConnectionError,
@@ -135,9 +137,14 @@ def register_error_log_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"history", "read"},
+        timeout=30,
+    )
     async def error_log_get(
         max_entries: int = 30,
+        ctx: Context = None,
     ) -> dict:
         """Retrieve and summarise Home Assistant error logs.
 
@@ -171,9 +178,15 @@ def register_error_log_tool(mcp: Any, get_client: Any) -> None:
         max_entries = max(5, min(max_entries, 100))
 
         try:
+            if ctx:
+                await ctx.info("Retrieving Home Assistant error log")
             logger.info("Retrieving Home Assistant error log")
 
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             raw_log = await client.get_error_log()
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
             log_size = len(raw_log) if raw_log else 0
 
             if not raw_log or not raw_log.strip():

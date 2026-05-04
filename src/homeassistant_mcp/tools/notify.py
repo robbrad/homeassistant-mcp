@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any
 
+from fastmcp import Context
 from pydantic import Field
 
 from ..exceptions import (
@@ -24,7 +25,11 @@ def register_notify_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"notification"},
+        timeout=30,
+    )
     async def send_notification(
         message: Annotated[str, Field(description="The notification message to send")],
         title: Annotated[
@@ -36,6 +41,7 @@ def register_notify_tool(mcp: Any, get_client: Any) -> None:
                 description="Optional target device or service for the notification. Example: 'mobile_app_phone'"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Send notifications through Home Assistant.
 
@@ -59,7 +65,15 @@ def register_notify_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
-            return await _send_notification(client, message, title, target)
+            if ctx:
+                await ctx.info("Executing send_notification")
+
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
+            result = await _send_notification(client, message, title, target)
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
+            return result
 
         except AuthenticationError as e:
             logger.error(f"Authentication error: {str(e)}")

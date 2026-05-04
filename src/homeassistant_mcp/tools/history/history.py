@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_history_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"history", "read"},
+        timeout=30,
+    )
     async def history_query(
         entity_id: Annotated[
             str,
@@ -62,6 +67,7 @@ def register_history_tool(mcp: Any, get_client: Any) -> None:
                 description="Maximum number of history entries to return (default 50, max 500)",
             ),
         ] = 50,
+        ctx: Context = None,
     ) -> dict:
         """Query historical state changes for a specific entity.
 
@@ -101,11 +107,18 @@ def register_history_tool(mcp: Any, get_client: Any) -> None:
             timestamp = start.isoformat()
             end_time = now.isoformat()
 
+            if ctx:
+                await ctx.info(
+                    f"Querying history for {entity_id}, "
+                    f"last {hours}h, limit={limit}, minimal={minimal_response}"
+                )
             logger.info(
                 f"Querying history for {entity_id}, "
                 f"last {hours}h, limit={limit}, minimal={minimal_response}"
             )
 
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             history_data = await client.get_history(
                 timestamp=timestamp,
                 end_time=end_time,
@@ -113,6 +126,8 @@ def register_history_tool(mcp: Any, get_client: Any) -> None:
                 minimal_response=minimal_response,
                 limit=limit,
             )
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
 
             # Flatten — API returns list of lists, one per entity
             entries = []

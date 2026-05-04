@@ -552,7 +552,7 @@ class TestInputBooleanControlIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func
@@ -579,7 +579,7 @@ class TestInputNumberControlIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func
@@ -606,7 +606,7 @@ class TestInputSelectControlIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func
@@ -633,7 +633,7 @@ class TestInputTextControlIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func
@@ -660,7 +660,7 @@ class TestInputDatetimeControlIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func

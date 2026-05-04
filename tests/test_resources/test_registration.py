@@ -25,7 +25,7 @@ def test_all_resources_are_registered():
     # Track which resource patterns are registered
     registered_patterns = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         """Mock resource decorator that captures registered patterns."""
 
         def decorator(func):
@@ -64,7 +64,7 @@ def test_registration_order():
     # Track registration order
     registration_order = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         """Mock resource decorator that captures registration order."""
 
         def decorator(func):
@@ -109,7 +109,7 @@ def test_get_client_function_passed_correctly():
     # Track which get_client was used in each registration
     get_client_calls = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         """Mock resource decorator that captures the handler."""
 
         def decorator(func):
@@ -176,7 +176,7 @@ def test_registration_idempotency():
 
     registration_count = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         """Mock resource decorator that counts registrations."""
 
         def decorator(func):

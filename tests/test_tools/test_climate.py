@@ -19,7 +19,7 @@ def mock_client():
 def mock_mcp():
     """Create a mock FastMCP instance."""
     mcp = MagicMock()
-    mcp.tool = lambda: lambda func: func
+    mcp.tool = lambda **kwargs: lambda func: func
     return mcp
 
 
@@ -349,7 +349,7 @@ async def test_climate_control_list_action(mock_client):
     # Create a real tool function
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -375,7 +375,7 @@ async def test_climate_control_get_action_missing_entity_id(mock_client):
 
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -401,7 +401,7 @@ async def test_climate_control_set_hvac_mode_missing_mode(mock_client):
 
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -427,7 +427,7 @@ async def test_climate_control_set_fan_mode_missing_mode(mock_client):
 
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -455,7 +455,7 @@ async def test_climate_control_entity_not_found_error(mock_client):
 
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -483,7 +483,7 @@ async def test_climate_control_service_call_error(mock_client):
 
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -513,7 +513,7 @@ async def test_climate_control_unexpected_error(mock_client):
 
     tool_func = None
 
-    def mock_tool_decorator():
+    def mock_tool_decorator(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func

@@ -23,7 +23,7 @@ def register_services_resources(mcp: Any, get_client: Callable[[], Any]) -> None
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.resource("hass://services")
+    @mcp.resource("hass://services", annotations={"readOnlyHint": True, "idempotentHint": True})
     async def get_services_resource() -> TextResource:
         """Get all available services.
 

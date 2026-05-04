@@ -112,7 +112,7 @@ async def test_property_3_state_query_response_structure(
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -182,7 +182,7 @@ async def test_property_4_state_update_round_trip(
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -242,7 +242,7 @@ async def test_property_5_state_deletion_removes_entity(entity_id: str):
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -295,7 +295,7 @@ async def test_property_6_invalid_entity_error_handling(entity_id: str):
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func

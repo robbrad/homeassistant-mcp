@@ -9,6 +9,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastmcp import FastMCP
+from fastmcp.server.transforms.search import BM25SearchTransform
 
 from .config import get_settings
 from .hass.client import HomeAssistantClient
@@ -148,10 +149,22 @@ async def lifespan(app: FastMCP) -> AsyncIterator[None]:
     logger.info("Server shutdown complete")
 
 
-# Create FastMCP server instance with lifespan
+# Create FastMCP server instance with lifespan and tool search
 mcp = FastMCP(
     name="Home Assistant MCP",
     lifespan=lifespan,
+    transforms=[
+        BM25SearchTransform(
+            max_results=10,
+            always_visible=[
+                "states_control",
+                "list_devices",
+                "call_service",
+                "template_render",
+                "error_log_get",
+            ],
+        ),
+    ],
 )
 
 

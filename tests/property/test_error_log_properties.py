@@ -85,7 +85,7 @@ async def test_property_16_error_log_response_format(error_log_content: str):
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -163,7 +163,7 @@ async def test_property_17_error_log_access_error_handling(error_type: str):
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -216,7 +216,7 @@ async def test_error_log_always_returns_string(mock_return: str):
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -255,7 +255,7 @@ async def test_log_size_and_has_errors_consistency(error_log_content: str):
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func

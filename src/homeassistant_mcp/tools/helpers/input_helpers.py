@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_input_boolean_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "input"},
+        timeout=30,
+    )
     async def input_boolean_control(
         action: Annotated[
             Literal["list", "get", "turn_on", "turn_off", "toggle"],
@@ -39,6 +44,7 @@ def register_input_boolean_tool(mcp: Any, get_client: Any) -> None:
                 description="Input boolean entity ID (required for get, turn_on, turn_off, toggle). Example: 'input_boolean.guest_mode'"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control input boolean helpers in Home Assistant.
 
@@ -69,18 +75,36 @@ def register_input_boolean_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing input_boolean_control action={action}")
+
             if action == "list":
-                return await _list_input_booleans(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_input_booleans(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if not entity_id:
                     return {"error": "entity_id is required for 'turn_on' action", "success": False}
-                return await _turn_on_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if not entity_id:
@@ -88,12 +112,22 @@ def register_input_boolean_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "toggle":
                 if not entity_id:
                     return {"error": "entity_id is required for 'toggle' action", "success": False}
-                return await _toggle_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _toggle_input_boolean(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")
@@ -127,7 +161,11 @@ def register_input_number_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "input"},
+        timeout=30,
+    )
     async def input_number_control(
         action: Annotated[
             Literal["list", "get", "set_value", "increment", "decrement"],
@@ -145,6 +183,7 @@ def register_input_number_tool(mcp: Any, get_client: Any) -> None:
             float | None,
             Field(description="Value to set (required for set_value action)"),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control input number helpers in Home Assistant.
 
@@ -176,13 +215,26 @@ def register_input_number_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing input_number_control action={action}")
+
             if action == "list":
-                return await _list_input_numbers(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_input_numbers(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_input_number(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_input_number(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_value":
                 if not entity_id:
@@ -192,7 +244,12 @@ def register_input_number_tool(mcp: Any, get_client: Any) -> None:
                     }
                 if value is None:
                     return {"error": "value is required for 'set_value' action", "success": False}
-                return await _set_input_number_value(client, entity_id, value)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_input_number_value(client, entity_id, value)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "increment":
                 if not entity_id:
@@ -200,7 +257,12 @@ def register_input_number_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'increment' action",
                         "success": False,
                     }
-                return await _increment_input_number(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _increment_input_number(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "decrement":
                 if not entity_id:
@@ -208,7 +270,12 @@ def register_input_number_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'decrement' action",
                         "success": False,
                     }
-                return await _decrement_input_number(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _decrement_input_number(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")
@@ -242,7 +309,11 @@ def register_input_select_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "input"},
+        timeout=30,
+    )
     async def input_select_control(
         action: Annotated[
             Literal["list", "get", "select_option"],
@@ -260,6 +331,7 @@ def register_input_select_tool(mcp: Any, get_client: Any) -> None:
             str | None,
             Field(description="Option to select (required for select_option action)"),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control input select helpers in Home Assistant.
 
@@ -287,13 +359,26 @@ def register_input_select_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing input_select_control action={action}")
+
             if action == "list":
-                return await _list_input_selects(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_input_selects(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_input_select(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_input_select(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "select_option":
                 if not entity_id:
@@ -306,7 +391,12 @@ def register_input_select_tool(mcp: Any, get_client: Any) -> None:
                         "error": "option is required for 'select_option' action",
                         "success": False,
                     }
-                return await _select_input_select_option(client, entity_id, option)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _select_input_select_option(client, entity_id, option)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")
@@ -340,7 +430,11 @@ def register_input_text_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "input"},
+        timeout=30,
+    )
     async def input_text_control(
         action: Annotated[
             Literal["list", "get", "set_value"],
@@ -358,6 +452,7 @@ def register_input_text_tool(mcp: Any, get_client: Any) -> None:
             str | None,
             Field(description="Text value to set (required for set_value action)"),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control input text helpers in Home Assistant.
 
@@ -385,13 +480,26 @@ def register_input_text_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing input_text_control action={action}")
+
             if action == "list":
-                return await _list_input_texts(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_input_texts(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_input_text(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_input_text(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_value":
                 if not entity_id:
@@ -401,7 +509,12 @@ def register_input_text_tool(mcp: Any, get_client: Any) -> None:
                     }
                 if value is None:
                     return {"error": "value is required for 'set_value' action", "success": False}
-                return await _set_input_text_value(client, entity_id, value)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_input_text_value(client, entity_id, value)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")
@@ -435,7 +548,11 @@ def register_input_datetime_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "input"},
+        timeout=30,
+    )
     async def input_datetime_control(
         action: Annotated[
             Literal["list", "get", "set_datetime"],
@@ -467,6 +584,7 @@ def register_input_datetime_tool(mcp: Any, get_client: Any) -> None:
                 description="Time value to set in HH:MM:SS format (optional for set_datetime). Example: '08:30:00'"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control input datetime helpers in Home Assistant.
 
@@ -498,13 +616,26 @@ def register_input_datetime_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing input_datetime_control action={action}")
+
             if action == "list":
-                return await _list_input_datetimes(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_input_datetimes(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_input_datetime(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_input_datetime(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_datetime":
                 if not entity_id:
@@ -517,7 +648,12 @@ def register_input_datetime_tool(mcp: Any, get_client: Any) -> None:
                         "error": "At least one of datetime, date, or time is required for 'set_datetime' action",
                         "success": False,
                     }
-                return await _set_input_datetime_value(client, entity_id, datetime, date, time)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_input_datetime_value(client, entity_id, datetime, date, time)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from fastmcp import Context
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,9 +16,14 @@ def register_template_tool(mcp: Any, get_client: Any) -> None:
         get_client: Function that returns HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"specialized", "read"},
+        timeout=30,
+    )
     async def template_render(
         template: str,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Render a Home Assistant template.
 
@@ -62,8 +69,14 @@ def register_template_tool(mcp: Any, get_client: Any) -> None:
         client = get_client()
 
         try:
+            if ctx:
+                await ctx.info("Rendering template")
             logger.info("Rendering template")
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             result = await client.render_template(template)
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
 
             return {"success": True, "result": result, "template": template}
 

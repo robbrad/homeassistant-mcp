@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"automation", "control"},
+        timeout=30,
+    )
     async def automation_control(
         action: Annotated[
             Literal["list", "toggle", "trigger", "turn_on", "turn_off", "reload"],
@@ -39,6 +44,7 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
                 description="Automation entity ID (required for toggle, trigger, turn_on, turn_off). Example: 'automation.morning_routine'"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Manage Home Assistant automations.
 
@@ -75,8 +81,16 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing automation_control action={action}")
+
             if action == "list":
-                return await _list_automations(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_automations(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "toggle":
                 if not automation_id:
@@ -84,7 +98,12 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
                         "error": "automation_id is required for 'toggle' action",
                         "success": False,
                     }
-                return await _toggle_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _toggle_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "trigger":
                 if not automation_id:
@@ -92,7 +111,12 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
                         "error": "automation_id is required for 'trigger' action",
                         "success": False,
                     }
-                return await _trigger_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _trigger_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if not automation_id:
@@ -100,7 +124,12 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
                         "error": "automation_id is required for 'turn_on' action",
                         "success": False,
                     }
-                return await _turn_on_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if not automation_id:
@@ -108,10 +137,20 @@ def register_automation_tool(mcp: Any, get_client: Any) -> None:
                         "error": "automation_id is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_automation(client, automation_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "reload":
-                return await _reload_automations(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _reload_automations(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

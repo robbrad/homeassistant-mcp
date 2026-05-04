@@ -138,7 +138,7 @@ async def test_property_7_history_time_range_filtering(entity_ids: list[str], ho
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -214,7 +214,7 @@ async def test_property_8_history_entity_filtering(all_entities: list[str], filt
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -280,7 +280,7 @@ async def test_property_9_history_response_structure(entity_id: str, entry_count
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -344,7 +344,7 @@ async def test_property_10_invalid_timestamp_error_handling(invalid_timestamp: s
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func

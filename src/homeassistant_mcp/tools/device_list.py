@@ -4,6 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Annotated, Any
 
+from fastmcp import Context
 from pydantic import Field
 
 from ..exceptions import (
@@ -73,7 +74,11 @@ def register_devices_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"device", "read"},
+        timeout=30,
+    )
     async def list_devices(
         domain: Annotated[
             str | None,
@@ -93,6 +98,7 @@ def register_devices_tool(mcp: Any, get_client: Any) -> None:
             str | None,
             Field(description="Filter devices by floor name (e.g., 'Ground Floor', 'First Floor')"),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """List all available Home Assistant devices with optional filtering.
 
@@ -127,6 +133,10 @@ def register_devices_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(
+                    f"Listing devices with filters: domain={domain}, area={area}, floor={floor}"
+                )
             return await _list_and_filter_devices(client, domain, area, floor)
 
         except AuthenticationError as e:

@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "media"},
+        timeout=30,
+    )
     async def media_player_control(
         action: Annotated[
             Literal[
@@ -85,6 +90,7 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                 "Only used with play_media action."
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control media players in Home Assistant.
 
@@ -136,13 +142,26 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing media_player_control action={action}")
+
             if action == "list":
-                return await _list_media_players(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_media_players(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_media_player(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_media_player(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action in ["play", "pause", "stop", "toggle", "next_track", "previous_track"]:
                 if not entity_id:
@@ -150,7 +169,12 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                         "error": f"entity_id is required for '{action}' action",
                         "success": False,
                     }
-                return await _playback_control(client, entity_id, action)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _playback_control(client, entity_id, action)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_volume":
                 if not entity_id:
@@ -163,7 +187,12 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                         "error": "volume_level is required for 'set_volume' action",
                         "success": False,
                     }
-                return await _set_volume(client, entity_id, volume_level)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_volume(client, entity_id, volume_level)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action in ["volume_up", "volume_down"]:
                 if not entity_id:
@@ -171,7 +200,12 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                         "error": f"entity_id is required for '{action}' action",
                         "success": False,
                     }
-                return await _volume_control(client, entity_id, action)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _volume_control(client, entity_id, action)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action in ["mute", "unmute"]:
                 if not entity_id:
@@ -179,7 +213,12 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                         "error": f"entity_id is required for '{action}' action",
                         "success": False,
                     }
-                return await _mute_control(client, entity_id, action)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _mute_control(client, entity_id, action)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "select_source":
                 if not entity_id:
@@ -192,7 +231,12 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                         "error": "source is required for 'select_source' action",
                         "success": False,
                     }
-                return await _select_source(client, entity_id, source)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _select_source(client, entity_id, source)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "play_media":
                 if not entity_id:
@@ -210,7 +254,12 @@ def register_media_player_tool(mcp: Any, get_client: Any) -> None:
                         "error": "media_content_type is required for 'play_media' action",
                         "success": False,
                     }
-                return await _play_media(client, entity_id, media_content_id, media_content_type)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _play_media(client, entity_id, media_content_id, media_content_type)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             # This should never be reached due to Literal type, but mypy needs it
             return {"error": f"Unknown action: {action}", "success": False}

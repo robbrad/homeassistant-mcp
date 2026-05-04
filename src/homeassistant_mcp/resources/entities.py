@@ -24,7 +24,7 @@ def register_entity_resources(mcp: Any, get_client: Callable[[], Any]) -> None:
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.resource("hass://entity/{entity_id}")
+    @mcp.resource("hass://entity/{entity_id}", annotations={"readOnlyHint": True, "idempotentHint": True})
     async def get_entity_resource(entity_id: str) -> TextResource:
         """Get entity state and attributes.
 

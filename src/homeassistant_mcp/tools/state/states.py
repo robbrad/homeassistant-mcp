@@ -4,6 +4,8 @@ import logging
 from collections.abc import Callable
 from typing import Any, Literal
 
+from fastmcp import Context
+
 from ...exceptions import EntityNotFoundError, ServiceCallError
 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,11 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
         get_client: Function to get the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"state", "read-write"},
+        timeout=30,
+    )
     async def states_control(
         action: Literal["list", "get", "set", "delete"],
         entity_id: str | None = None,
@@ -27,6 +33,7 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
         area: str | None = None,
         limit: int = 100,
         offset: int = 0,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Manage entity states with filtering support.
 
@@ -90,6 +97,11 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
                 if len(states) > limit:
                     states = states[:limit]
 
+                if ctx:
+                    await ctx.info(
+                        f"Listed {len(states)} entities "
+                        f"(domain={domain}, area={area}, limit={limit}, offset={offset})"
+                    )
                 logger.info(
                     f"Listed {len(states)} entities "
                     f"(domain={domain}, area={area}, limit={limit}, offset={offset})"
@@ -128,7 +140,14 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
                     }
 
                 # Get specific entity state
+                if ctx:
+                    await ctx.info(f"Retrieving state for {entity_id}")
+                logger.info(f"Retrieving state for {entity_id}")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 entity_state = await client.get_state(entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 logger.info(f"Retrieved state for {entity_id}")
 
@@ -153,7 +172,14 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
                     }
 
                 # Set entity state
+                if ctx:
+                    await ctx.info(f"Setting state for {entity_id} to '{state}'")
+                logger.info(f"Setting state for {entity_id} to '{state}'")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 result = await client.set_state(entity_id, state, attributes)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 logger.info(f"Set state for {entity_id} to '{state}'")
 
@@ -172,7 +198,14 @@ def register_states_control_tool(mcp: Any, get_client: Callable) -> None:
                     }
 
                 # Delete entity state
+                if ctx:
+                    await ctx.info(f"Deleting state for {entity_id}")
+                logger.info(f"Deleting state for {entity_id}")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 result = await client.delete_state(entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 logger.info(f"Deleted state for {entity_id}")
 

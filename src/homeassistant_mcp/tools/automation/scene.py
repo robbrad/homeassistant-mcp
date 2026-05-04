@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_scene_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"automation", "scene"},
+        timeout=30,
+    )
     async def scene_control(
         action: Annotated[
             Literal["list", "activate"],
@@ -37,6 +42,7 @@ def register_scene_tool(mcp: Any, get_client: Any) -> None:
                 description="Scene entity ID (required for activate). Example: 'scene.movie_time'"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Manage and activate Home Assistant scenes.
 
@@ -61,13 +67,26 @@ def register_scene_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing scene_control action={action}")
+
             if action == "list":
-                return await _list_scenes(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_scenes(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "activate":
                 if not scene_id:
                     return {"error": "scene_id is required for 'activate' action", "success": False}
-                return await _activate_scene(client, scene_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _activate_scene(client, scene_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

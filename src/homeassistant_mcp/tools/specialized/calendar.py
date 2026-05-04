@@ -3,6 +3,8 @@
 import logging
 from typing import Any, Literal
 
+from fastmcp import Context
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,12 +16,17 @@ def register_calendar_tool(mcp: Any, get_client: Any) -> None:
         get_client: Function that returns HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"specialized", "read"},
+        timeout=30,
+    )
     async def calendar_access(
         action: Literal["list", "get_events"],
         calendar_entity_id: str | None = None,
         start: str | None = None,
         end: str | None = None,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Access Home Assistant calendar data.
 
@@ -62,8 +69,14 @@ def register_calendar_tool(mcp: Any, get_client: Any) -> None:
 
         try:
             if action == "list":
+                if ctx:
+                    await ctx.info("Listing calendar entities")
                 logger.info("Listing calendar entities")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 calendars = await client.get_calendars()
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
                 return {"success": True, "calendars": calendars, "count": len(calendars)}
 
             elif action == "get_events":
@@ -74,10 +87,16 @@ def register_calendar_tool(mcp: Any, get_client: Any) -> None:
                         "error_type": "validation_error",
                     }
 
+                if ctx:
+                    await ctx.info(f"Fetching events for calendar: {calendar_entity_id}")
                 logger.info(f"Fetching events for calendar: {calendar_entity_id}")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 events = await client.get_calendar_events(
                     calendar_entity_id=calendar_entity_id, start=start, end=end
                 )
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 return {
                     "success": True,

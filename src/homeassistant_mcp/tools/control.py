@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any
 
+from fastmcp import Context
 from pydantic import Field
 
 from ..exceptions import (
@@ -24,7 +25,11 @@ def register_control_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "generic"},
+        timeout=30,
+    )
     async def call_service(
         domain: Annotated[
             str,
@@ -45,6 +50,7 @@ def register_control_tool(mcp: Any, get_client: Any) -> None:
             dict[str, Any] | None,
             Field(description="Additional service data as key-value pairs (optional)"),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Call any Home Assistant service with custom parameters.
 
@@ -84,7 +90,15 @@ def register_control_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
-            return await _call_service(client, domain, service, entity_id, data)
+            if ctx:
+                await ctx.info(f"Executing call_service {domain}.{service}")
+
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
+            result = await _call_service(client, domain, service, entity_id, data)
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
+            return result
 
         except AuthenticationError as e:
             logger.error(f"Authentication error: {str(e)}")

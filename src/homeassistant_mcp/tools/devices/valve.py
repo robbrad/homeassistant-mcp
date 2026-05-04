@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_valve_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control"},
+        timeout=30,
+    )
     async def valve_control(
         action: Annotated[
             Literal["list", "get", "open", "close", "stop", "toggle", "set_position"],
@@ -47,6 +52,7 @@ def register_valve_tool(mcp: Any, get_client: Any) -> None:
                 description="Valve position percentage (0-100). Only used with set_position action.",
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control valves in Home Assistant.
 
@@ -82,33 +88,66 @@ def register_valve_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing valve_control action={action}")
+
             if action == "list":
-                return await _list_valves(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_valves(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "open":
                 if not entity_id:
                     return {"error": "entity_id is required for 'open' action", "success": False}
-                return await _open_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _open_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "close":
                 if not entity_id:
                     return {"error": "entity_id is required for 'close' action", "success": False}
-                return await _close_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _close_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "stop":
                 if not entity_id:
                     return {"error": "entity_id is required for 'stop' action", "success": False}
-                return await _stop_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _stop_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "toggle":
                 if not entity_id:
                     return {"error": "entity_id is required for 'toggle' action", "success": False}
-                return await _toggle_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _toggle_valve(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_position":
                 if not entity_id:
@@ -121,7 +160,12 @@ def register_valve_tool(mcp: Any, get_client: Any) -> None:
                         "error": "position is required for 'set_position' action",
                         "success": False,
                     }
-                return await _set_valve_position(client, entity_id, position)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_valve_position(client, entity_id, position)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

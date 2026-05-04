@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_siren_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "security"},
+        timeout=30,
+    )
     async def siren_control(
         action: Annotated[
             Literal["list", "get", "turn_on", "turn_off", "toggle"],
@@ -57,6 +62,7 @@ def register_siren_tool(mcp: Any, get_client: Any) -> None:
                 description="Duration in seconds to play the siren. Only used with turn_on action."
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control sirens in Home Assistant.
 
@@ -93,18 +99,36 @@ def register_siren_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing siren_control action={action}")
+
             if action == "list":
-                return await _list_sirens(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_sirens(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_siren(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_siren(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if not entity_id:
                     return {"error": "entity_id is required for 'turn_on' action", "success": False}
-                return await _turn_on_siren(client, entity_id, tone, volume_level, duration)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_siren(client, entity_id, tone, volume_level, duration)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if not entity_id:
@@ -112,12 +136,22 @@ def register_siren_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_siren(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_siren(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "toggle":
                 if not entity_id:
                     return {"error": "entity_id is required for 'toggle' action", "success": False}
-                return await _toggle_siren(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _toggle_siren(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "fan"},
+        timeout=30,
+    )
     async def fan_control(
         action: Annotated[
             Literal[
@@ -70,6 +75,7 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
             Literal["forward", "reverse"] | None,
             Field(description="Fan rotation direction. Only used with set_direction action."),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control fans in Home Assistant.
 
@@ -110,18 +116,36 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing fan_control action={action}")
+
             if action == "list":
-                return await _list_fans(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_fans(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_fan(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_fan(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if not entity_id:
                     return {"error": "entity_id is required for 'turn_on' action", "success": False}
-                return await _turn_on_fan(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_fan(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if not entity_id:
@@ -129,7 +153,12 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_fan(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_fan(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_percentage":
                 if not entity_id:
@@ -142,7 +171,12 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
                         "error": "percentage is required for 'set_percentage' action",
                         "success": False,
                     }
-                return await _set_percentage(client, entity_id, percentage)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_percentage(client, entity_id, percentage)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_preset_mode":
                 if not entity_id:
@@ -155,7 +189,12 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
                         "error": "preset_mode is required for 'set_preset_mode' action",
                         "success": False,
                     }
-                return await _set_preset_mode(client, entity_id, preset_mode)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_preset_mode(client, entity_id, preset_mode)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "oscillate":
                 if not entity_id:
@@ -168,7 +207,12 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
                         "error": "oscillating is required for 'oscillate' action",
                         "success": False,
                     }
-                return await _oscillate(client, entity_id, oscillating)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _oscillate(client, entity_id, oscillating)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_direction":
                 if not entity_id:
@@ -181,7 +225,12 @@ def register_fan_tool(mcp: Any, get_client: Any) -> None:
                         "error": "direction is required for 'set_direction' action",
                         "success": False,
                     }
-                return await _set_direction(client, entity_id, direction)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_direction(client, entity_id, direction)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

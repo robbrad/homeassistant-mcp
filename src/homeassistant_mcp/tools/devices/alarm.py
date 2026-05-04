@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_alarm_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "security"},
+        timeout=30,
+    )
     async def alarm_control(
         action: Annotated[
             Literal["list", "get", "arm_away", "arm_home", "arm_night", "disarm", "trigger"],
@@ -45,6 +50,7 @@ def register_alarm_tool(mcp: Any, get_client: Any) -> None:
                 description="Security code (required for disarm action, may be required for arming depending on configuration)"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control alarm systems in Home Assistant.
 
@@ -80,13 +86,26 @@ def register_alarm_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing alarm_control action={action}")
+
             if action == "list":
-                return await _list_alarms(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_alarms(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_alarm(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_alarm(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "arm_away":
                 if not entity_id:
@@ -94,7 +113,12 @@ def register_alarm_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'arm_away' action",
                         "success": False,
                     }
-                return await _arm_alarm(client, entity_id, "arm_away", code)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _arm_alarm(client, entity_id, "arm_away", code)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "arm_home":
                 if not entity_id:
@@ -102,7 +126,12 @@ def register_alarm_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'arm_home' action",
                         "success": False,
                     }
-                return await _arm_alarm(client, entity_id, "arm_home", code)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _arm_alarm(client, entity_id, "arm_home", code)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "arm_night":
                 if not entity_id:
@@ -110,19 +139,34 @@ def register_alarm_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'arm_night' action",
                         "success": False,
                     }
-                return await _arm_alarm(client, entity_id, "arm_night", code)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _arm_alarm(client, entity_id, "arm_night", code)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "disarm":
                 if not entity_id:
                     return {"error": "entity_id is required for 'disarm' action", "success": False}
                 if not code:
                     return {"error": "code is required for 'disarm' action", "success": False}
-                return await _disarm_alarm(client, entity_id, code)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _disarm_alarm(client, entity_id, code)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "trigger":
                 if not entity_id:
                     return {"error": "entity_id is required for 'trigger' action", "success": False}
-                return await _trigger_alarm(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _trigger_alarm(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

@@ -8,6 +8,8 @@ import logging
 from collections.abc import Callable
 from typing import Any, Literal
 
+from fastmcp import Context
+
 from ...exceptions import ServiceCallError
 
 logger = logging.getLogger(__name__)
@@ -21,13 +23,18 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"api", "service"},
+        timeout=30,
+    )
     async def services_control(
         action: Literal["list", "call"],
         domain: str | None = None,
         service: str | None = None,
         service_data: dict[str, Any] | None = None,
         return_response: bool = False,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Manage Home Assistant services.
 
@@ -71,8 +78,14 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
 
         try:
             if action == "list":
+                if ctx:
+                    await ctx.info("Listing available services")
                 logger.info("Listing available services")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 services = await client.get_services()
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 # Handle both list and dict formats from the API
                 if isinstance(services, list):
@@ -148,13 +161,19 @@ def register_tool(mcp: Any, get_client: Callable[[], Any]) -> None:
                         f"Invalid service_data: must be a dictionary, got {type(service_data).__name__}"
                     )
 
+                if ctx:
+                    await ctx.info(f"Calling service: {domain}.{service}")
                 logger.info(f"Calling service: {domain}.{service}")
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
                 result = await client.call_service(
                     domain=domain,
                     service=service,
                     data=service_data,
                     return_response=return_response,
                 )
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
 
                 return {
                     "success": True,

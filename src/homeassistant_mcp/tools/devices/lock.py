@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_lock_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "security"},
+        timeout=30,
+    )
     async def lock_control(
         action: Annotated[
             Literal["list", "get", "lock", "unlock"],
@@ -43,6 +48,7 @@ def register_lock_tool(mcp: Any, get_client: Any) -> None:
             str | None,
             Field(description="Optional code for unlock action (required by some locks)"),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control smart locks in Home Assistant.
 
@@ -77,23 +83,46 @@ def register_lock_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing lock_control action={action}")
+
             if action == "list":
-                return await _list_locks(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_locks(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_lock(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_lock(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "lock":
                 if not entity_id:
                     return {"error": "entity_id is required for 'lock' action", "success": False}
-                return await _lock_lock(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _lock_lock(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "unlock":
                 if not entity_id:
                     return {"error": "entity_id is required for 'unlock' action", "success": False}
-                return await _unlock_lock(client, entity_id, code)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _unlock_lock(client, entity_id, code)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

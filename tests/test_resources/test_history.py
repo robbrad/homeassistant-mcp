@@ -49,7 +49,7 @@ async def test_successful_history_resource_fetch():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -121,7 +121,7 @@ async def test_default_query_parameters():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -173,7 +173,7 @@ async def test_custom_query_parameters():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -228,7 +228,7 @@ async def test_history_entry_structure():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -279,7 +279,7 @@ async def test_empty_history_handling():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -323,7 +323,7 @@ async def test_entity_not_found_error():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -385,7 +385,7 @@ async def test_pagination_with_offset():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -446,7 +446,7 @@ async def test_has_more_indicator():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -506,7 +506,7 @@ async def test_cache_ttl_hint_presence():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -546,7 +546,7 @@ async def test_internal_error_handling():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -587,7 +587,7 @@ async def test_history_with_no_data_returned():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func

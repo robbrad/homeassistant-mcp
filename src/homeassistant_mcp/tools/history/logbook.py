@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -24,7 +25,11 @@ def register_logbook_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"history", "read"},
+        timeout=30,
+    )
     async def logbook_query(
         timestamp: Annotated[
             str,
@@ -61,6 +66,7 @@ def register_logbook_tool(mcp: Any, get_client: Any) -> None:
                 description="Maximum number of logbook entries to return (default 100, max 500)",
             ),
         ] = 100,
+        ctx: Context = None,
     ) -> dict:
         """Query human-readable logbook entries with filtering support.
 
@@ -112,15 +118,21 @@ def register_logbook_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Querying logbook from {timestamp}, entity={entity}, limit={limit}")
             logger.info(f"Querying logbook from {timestamp}, entity={entity}, limit={limit}")
 
             # Call the client method with all parameters
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             logbook_data = await client.get_logbook(
                 timestamp=timestamp,
                 end_time=end_time,
                 entity=entity,
                 limit=limit,
             )
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
 
             # Count entries in response
             entry_count = len(logbook_data) if logbook_data else 0

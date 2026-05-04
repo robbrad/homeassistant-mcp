@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_cover_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "cover"},
+        timeout=30,
+    )
     async def cover_control(
         action: Annotated[
             Literal["list", "get", "open", "close", "stop", "toggle", "set_position", "set_tilt"],
@@ -55,6 +60,7 @@ def register_cover_tool(mcp: Any, get_client: Any) -> None:
                 le=100,
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control covers, blinds, and garage doors in Home Assistant.
 
@@ -97,33 +103,66 @@ def register_cover_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing cover_control action={action}")
+
             if action == "list":
-                return await _list_covers(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_covers(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "open":
                 if not entity_id:
                     return {"error": "entity_id is required for 'open' action", "success": False}
-                return await _open_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _open_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "close":
                 if not entity_id:
                     return {"error": "entity_id is required for 'close' action", "success": False}
-                return await _close_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _close_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "stop":
                 if not entity_id:
                     return {"error": "entity_id is required for 'stop' action", "success": False}
-                return await _stop_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _stop_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "toggle":
                 if not entity_id:
                     return {"error": "entity_id is required for 'toggle' action", "success": False}
-                return await _toggle_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _toggle_cover(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_position":
                 if not entity_id:
@@ -136,7 +175,12 @@ def register_cover_tool(mcp: Any, get_client: Any) -> None:
                         "error": "position parameter is required for 'set_position' action",
                         "success": False,
                     }
-                return await _set_cover_position(client, entity_id, position)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_cover_position(client, entity_id, position)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_tilt":
                 if not entity_id:
@@ -149,7 +193,12 @@ def register_cover_tool(mcp: Any, get_client: Any) -> None:
                         "error": "tilt parameter is required for 'set_tilt' action",
                         "success": False,
                     }
-                return await _set_cover_tilt(client, entity_id, tilt)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_cover_tilt(client, entity_id, tilt)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

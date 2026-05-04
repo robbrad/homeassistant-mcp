@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "camera"},
+        timeout=30,
+    )
     async def camera_control(
         action: Annotated[
             Literal[
@@ -55,6 +60,7 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
                 "returns base64-encoded image data. Only used with snapshot action."
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control cameras in Home Assistant.
 
@@ -94,13 +100,26 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing camera_control action={action}")
+
             if action == "list":
-                return await _list_cameras(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_cameras(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_camera(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_camera(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "snapshot":
                 if not entity_id:
@@ -108,7 +127,12 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'snapshot' action",
                         "success": False,
                     }
-                return await _get_snapshot(client, entity_id, output_path)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_snapshot(client, entity_id, output_path)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "enable_motion_detection":
                 if not entity_id:
@@ -116,7 +140,12 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'enable_motion_detection' action",
                         "success": False,
                     }
-                return await _set_motion_detection(client, entity_id, True)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_motion_detection(client, entity_id, True)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "disable_motion_detection":
                 if not entity_id:
@@ -124,7 +153,12 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'disable_motion_detection' action",
                         "success": False,
                     }
-                return await _set_motion_detection(client, entity_id, False)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_motion_detection(client, entity_id, False)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get_stream_url":
                 if not entity_id:
@@ -132,7 +166,12 @@ def register_camera_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'get_stream_url' action",
                         "success": False,
                     }
-                return await _get_stream_url(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_stream_url(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

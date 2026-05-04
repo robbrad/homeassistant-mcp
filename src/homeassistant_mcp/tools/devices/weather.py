@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_weather_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"device", "read"},
+        timeout=30,
+    )
     async def weather_control(
         action: Annotated[
             Literal["list", "get", "get_forecast"],
@@ -45,6 +50,7 @@ def register_weather_tool(mcp: Any, get_client: Any) -> None:
                 description="Forecast type: daily or hourly. Only used with get_forecast action."
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Get weather information from Home Assistant.
 
@@ -73,13 +79,26 @@ def register_weather_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing weather_control action={action}")
+
             if action == "list":
-                return await _list_weather_entities(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_weather_entities(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_weather(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_weather(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get_forecast":
                 if not entity_id:
@@ -92,7 +111,12 @@ def register_weather_tool(mcp: Any, get_client: Any) -> None:
                         "error": "forecast_type is required for 'get_forecast' action",
                         "success": False,
                     }
-                return await _get_forecast(client, entity_id, forecast_type)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_forecast(client, entity_id, forecast_type)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control"},
+        timeout=30,
+    )
     async def water_heater_control(
         action: Annotated[
             Literal[
@@ -63,6 +68,7 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
             bool | None,
             Field(description="Enable or disable away mode. Only used with set_away_mode action."),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control water heaters in Home Assistant.
 
@@ -99,18 +105,36 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing water_heater_control action={action}")
+
             if action == "list":
-                return await _list_water_heaters(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_water_heaters(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_water_heater(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_water_heater(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if not entity_id:
                     return {"error": "entity_id is required for 'turn_on' action", "success": False}
-                return await _turn_on_water_heater(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_water_heater(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if not entity_id:
@@ -118,7 +142,12 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_water_heater(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_water_heater(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_temperature":
                 if not entity_id:
@@ -131,7 +160,12 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
                         "error": "temperature is required for 'set_temperature' action",
                         "success": False,
                     }
-                return await _set_temperature(client, entity_id, temperature)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_temperature(client, entity_id, temperature)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_operation_mode":
                 if not entity_id:
@@ -144,7 +178,12 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
                         "error": "operation_mode is required for 'set_operation_mode' action",
                         "success": False,
                     }
-                return await _set_operation_mode(client, entity_id, operation_mode)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_operation_mode(client, entity_id, operation_mode)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_away_mode":
                 if not entity_id:
@@ -157,7 +196,12 @@ def register_water_heater_tool(mcp: Any, get_client: Any) -> None:
                         "error": "away_mode is required for 'set_away_mode' action",
                         "success": False,
                     }
-                return await _set_away_mode(client, entity_id, away_mode)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_away_mode(client, entity_id, away_mode)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

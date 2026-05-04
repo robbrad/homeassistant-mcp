@@ -29,7 +29,7 @@ def register_area_resources(mcp: Any, get_client: Callable[[], Any]) -> None:
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.resource("hass://area/{area_id}")
+    @mcp.resource("hass://area/{area_id}", annotations={"readOnlyHint": True, "idempotentHint": True})
     async def get_area_resource(area_id: str) -> TextResource:
         """Get area information and associated entities.
 

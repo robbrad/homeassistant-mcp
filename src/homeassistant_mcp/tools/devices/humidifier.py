@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_humidifier_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control"},
+        timeout=30,
+    )
     async def humidifier_control(
         action: Annotated[
             Literal["list", "get", "turn_on", "turn_off", "set_humidity", "set_mode"],
@@ -53,6 +58,7 @@ def register_humidifier_tool(mcp: Any, get_client: Any) -> None:
                 description="Operation mode (e.g., 'normal', 'eco', 'away', 'boost', 'comfort', 'home', 'sleep', 'auto', 'baby'). Only used with set_mode action."
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control humidifiers in Home Assistant.
 
@@ -86,18 +92,36 @@ def register_humidifier_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing humidifier_control action={action}")
+
             if action == "list":
-                return await _list_humidifiers(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_humidifiers(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_humidifier(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_humidifier(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if not entity_id:
                     return {"error": "entity_id is required for 'turn_on' action", "success": False}
-                return await _turn_on_humidifier(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_humidifier(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if not entity_id:
@@ -105,7 +129,12 @@ def register_humidifier_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_humidifier(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_humidifier(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_humidity":
                 if not entity_id:
@@ -118,7 +147,12 @@ def register_humidifier_tool(mcp: Any, get_client: Any) -> None:
                         "error": "humidity is required for 'set_humidity' action",
                         "success": False,
                     }
-                return await _set_humidity(client, entity_id, humidity)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_humidity(client, entity_id, humidity)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "set_mode":
                 if not entity_id:
@@ -128,7 +162,12 @@ def register_humidifier_tool(mcp: Any, get_client: Any) -> None:
                     }
                 if not mode:
                     return {"error": "mode is required for 'set_mode' action", "success": False}
-                return await _set_mode(client, entity_id, mode)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _set_mode(client, entity_id, mode)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

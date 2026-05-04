@@ -28,7 +28,7 @@ def create_mock_mcp():
     # Store the registered tool function
     registered_tool = None
 
-    def tool_decorator():
+    def tool_decorator(**kwargs):
         def decorator(func):
             nonlocal registered_tool
             registered_tool = func

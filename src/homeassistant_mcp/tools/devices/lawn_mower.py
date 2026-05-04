@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_lawn_mower_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control"},
+        timeout=30,
+    )
     async def lawn_mower_control(
         action: Annotated[
             Literal["list", "get", "start", "pause", "dock"],
@@ -39,6 +44,7 @@ def register_lawn_mower_tool(mcp: Any, get_client: Any) -> None:
                 description="Lawn mower entity ID (required for get, start, pause, dock). Example: 'lawn_mower.backyard'"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control lawn mowers in Home Assistant.
 
@@ -69,28 +75,56 @@ def register_lawn_mower_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing lawn_mower_control action={action}")
+
             if action == "list":
-                return await _list_lawn_mowers(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_lawn_mowers(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_lawn_mower(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_lawn_mower(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "start":
                 if not entity_id:
                     return {"error": "entity_id is required for 'start' action", "success": False}
-                return await _start_mowing(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _start_mowing(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "pause":
                 if not entity_id:
                     return {"error": "entity_id is required for 'pause' action", "success": False}
-                return await _pause_mowing(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _pause_mowing(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "dock":
                 if not entity_id:
                     return {"error": "entity_id is required for 'dock' action", "success": False}
-                return await _dock_mower(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _dock_mower(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

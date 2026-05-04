@@ -23,7 +23,7 @@ def mock_client():
 def mock_mcp():
     """Create a mock FastMCP instance."""
     mcp = MagicMock()
-    mcp.tool = lambda: lambda func: func
+    mcp.tool = lambda **kwargs: lambda func: func
     return mcp
 
 
@@ -195,7 +195,7 @@ class TestSceneControlTool:
         # Create a real tool registration
         tool_func = None
 
-        def capture_tool():
+        def capture_tool(**kwargs):
             def decorator(func):
                 nonlocal tool_func
                 tool_func = func
@@ -223,7 +223,7 @@ class TestSceneControlTool:
         # Create a real tool registration
         tool_func = None
 
-        def capture_tool():
+        def capture_tool(**kwargs):
             def decorator(func):
                 nonlocal tool_func
                 tool_func = func
@@ -246,7 +246,7 @@ class TestSceneControlTool:
         # Create a real tool registration
         tool_func = None
 
-        def capture_tool():
+        def capture_tool(**kwargs):
             def decorator(func):
                 nonlocal tool_func
                 tool_func = func
@@ -272,7 +272,7 @@ class TestSceneControlTool:
         # Create a real tool registration
         tool_func = None
 
-        def capture_tool():
+        def capture_tool(**kwargs):
             def decorator(func):
                 nonlocal tool_func
                 tool_func = func
@@ -299,7 +299,7 @@ class TestSceneControlTool:
         # Create a real tool registration
         tool_func = None
 
-        def capture_tool():
+        def capture_tool(**kwargs):
             def decorator(func):
                 nonlocal tool_func
                 tool_func = func

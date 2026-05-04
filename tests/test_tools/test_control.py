@@ -184,7 +184,7 @@ class TestControlToolIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func
@@ -214,7 +214,7 @@ class TestControlToolIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func
@@ -244,7 +244,7 @@ class TestControlToolIntegration:
         mock_mcp = MagicMock()
         registered_func = None
 
-        def mock_tool():
+        def mock_tool(**kwargs):
             def decorator(func):
                 nonlocal registered_func
                 registered_func = func

@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"device", "control", "switch"},
+        timeout=30,
+    )
     async def switch_control(
         action: Annotated[
             Literal["list", "get", "turn_on", "turn_off", "toggle"],
@@ -45,6 +50,7 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
                 description="List of switch entity IDs for bulk operations (optional, used with turn_on/turn_off)"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Control switches in Home Assistant.
 
@@ -82,13 +88,26 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing switch_control action={action}")
+
             if action == "list":
-                return await _list_switches(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_switches(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_on":
                 if entity_ids:
@@ -98,7 +117,12 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id or entity_ids is required for 'turn_on' action",
                         "success": False,
                     }
-                return await _turn_on_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_on_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "turn_off":
                 if entity_ids:
@@ -108,7 +132,12 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id or entity_ids is required for 'turn_off' action",
                         "success": False,
                     }
-                return await _turn_off_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _turn_off_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "toggle":
                 if not entity_id:
@@ -116,7 +145,12 @@ def register_switch_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'toggle' action",
                         "success": False,
                     }
-                return await _toggle_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _toggle_switch(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

@@ -42,7 +42,7 @@ async def test_logbook_query_success():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -98,7 +98,7 @@ async def test_logbook_query_with_entity_filter():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -151,7 +151,7 @@ async def test_logbook_query_with_time_range():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -204,7 +204,7 @@ async def test_logbook_query_with_custom_limit():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -245,7 +245,7 @@ async def test_logbook_query_empty_result():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -281,7 +281,7 @@ async def test_logbook_query_authentication_error():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -316,7 +316,7 @@ async def test_logbook_query_connection_error():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func
@@ -353,7 +353,7 @@ async def test_logbook_query_invalid_timestamp():
     mock_mcp = Mock()
     tool_func = None
 
-    def mock_tool():
+    def mock_tool(**kwargs):
         def decorator(func):
             nonlocal tool_func
             tool_func = func

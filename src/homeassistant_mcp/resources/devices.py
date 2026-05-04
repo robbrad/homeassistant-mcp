@@ -29,7 +29,7 @@ def register_device_resources(mcp: Any, get_client: Callable[[], Any]) -> None:
         get_client: Function that returns the HomeAssistantClient instance
     """
 
-    @mcp.resource("hass://device/{device_id}")
+    @mcp.resource("hass://device/{device_id}", annotations={"readOnlyHint": True, "idempotentHint": True})
     async def get_device_resource(device_id: str) -> TextResource:
         """Get device information and associated entities.
 

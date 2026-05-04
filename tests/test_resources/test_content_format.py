@@ -48,7 +48,7 @@ async def test_entity_mime_type_is_application_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -79,7 +79,7 @@ async def test_area_mime_type_is_application_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -110,7 +110,7 @@ async def test_device_mime_type_is_application_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -141,7 +141,7 @@ async def test_services_mime_type_is_application_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -172,7 +172,7 @@ async def test_history_mime_type_is_application_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -211,7 +211,7 @@ async def test_entity_timestamps_are_iso8601():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -266,7 +266,7 @@ async def test_history_timestamps_are_iso8601():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -313,7 +313,7 @@ async def test_json_formatting_with_indentation():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -368,7 +368,7 @@ async def test_json_formatting_consistency_across_resources():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -426,7 +426,7 @@ async def test_non_serializable_value_handling():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -480,7 +480,7 @@ async def test_datetime_objects_are_serializable():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -522,7 +522,7 @@ async def test_error_response_mime_type_is_application_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -560,7 +560,7 @@ async def test_error_response_json_formatting():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func
@@ -610,7 +610,7 @@ async def test_all_resources_return_valid_json():
     mock_mcp = Mock()
     resource_handlers = {}
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             resource_handlers[uri_pattern] = func
             return func

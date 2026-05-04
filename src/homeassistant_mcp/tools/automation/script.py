@@ -3,6 +3,7 @@
 import logging
 from typing import Annotated, Any, Literal
 
+from fastmcp import Context
 from pydantic import Field
 
 from ...exceptions import (
@@ -25,7 +26,11 @@ def register_script_tool(mcp: Any, get_client: Any) -> None:
         get_client: Callable that returns the HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"automation", "script"},
+        timeout=30,
+    )
     async def script_control(
         action: Annotated[
             Literal["list", "get", "execute", "reload"],
@@ -45,6 +50,7 @@ def register_script_tool(mcp: Any, get_client: Any) -> None:
                 description="Optional variables to pass to the script during execution. Example: {'brightness': 100, 'color': 'blue'}"
             ),
         ] = None,
+        ctx: Context = None,
     ) -> dict:
         """Execute and manage Home Assistant scripts.
 
@@ -75,13 +81,26 @@ def register_script_tool(mcp: Any, get_client: Any) -> None:
         client: HomeAssistantClient = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Executing script_control action={action}")
+
             if action == "list":
-                return await _list_scripts(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _list_scripts(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "get":
                 if not entity_id:
                     return {"error": "entity_id is required for 'get' action", "success": False}
-                return await _get_script(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _get_script(client, entity_id)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "execute":
                 if not entity_id:
@@ -89,10 +108,20 @@ def register_script_tool(mcp: Any, get_client: Any) -> None:
                         "error": "entity_id is required for 'execute' action",
                         "success": False,
                     }
-                return await _execute_script(client, entity_id, variables)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _execute_script(client, entity_id, variables)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
             elif action == "reload":
-                return await _reload_scripts(client)
+                if ctx:
+                    await ctx.report_progress(progress=50, total=100)
+                result = await _reload_scripts(client)
+                if ctx:
+                    await ctx.report_progress(progress=100, total=100)
+                return result
 
         except EntityNotFoundError as e:
             logger.warning(f"Entity not found: {str(e)}")

@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from fastmcp import Context
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,10 +16,15 @@ def register_intent_tool(mcp: Any, get_client: Any) -> None:
         get_client: Function that returns HomeAssistantClient instance
     """
 
-    @mcp.tool()
+    @mcp.tool(
+        annotations={"openWorldHint": True},
+        tags={"specialized", "write"},
+        timeout=30,
+    )
     async def intent_handle(
         intent_type: str,
         intent_data: dict[str, Any] | None = None,
+        ctx: Context = None,
     ) -> dict[str, Any]:
         """Handle a Home Assistant intent for natural language processing.
 
@@ -87,8 +94,14 @@ def register_intent_tool(mcp: Any, get_client: Any) -> None:
         client = get_client()
 
         try:
+            if ctx:
+                await ctx.info(f"Handling intent: {intent_type}")
             logger.info(f"Handling intent: {intent_type}")
+            if ctx:
+                await ctx.report_progress(progress=50, total=100)
             result = await client.handle_intent(intent_type=intent_type, intent_data=intent_data)
+            if ctx:
+                await ctx.report_progress(progress=100, total=100)
 
             return {
                 "success": True,

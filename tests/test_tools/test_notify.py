@@ -12,7 +12,7 @@ from src.homeassistant_mcp.tools.notify import register_notify_tool
 def mock_mcp():
     """Create a mock FastMCP instance."""
     mcp = MagicMock()
-    mcp.tool = lambda: lambda func: func
+    mcp.tool = lambda **kwargs: lambda func: func
     return mcp
 
 
@@ -228,7 +228,7 @@ async def test_send_notification_tool_authentication_error(mock_mcp, get_client,
 
     registered_func = None
 
-    def capture_tool():
+    def capture_tool(**kwargs):
         def decorator(func):
             nonlocal registered_func
             registered_func = func
@@ -255,7 +255,7 @@ async def test_send_notification_tool_connection_error(mock_mcp, get_client, moc
 
     registered_func = None
 
-    def capture_tool():
+    def capture_tool(**kwargs):
         def decorator(func):
             nonlocal registered_func
             registered_func = func
@@ -282,7 +282,7 @@ async def test_send_notification_tool_service_call_error(mock_mcp, get_client, m
 
     registered_func = None
 
-    def capture_tool():
+    def capture_tool(**kwargs):
         def decorator(func):
             nonlocal registered_func
             registered_func = func
@@ -309,7 +309,7 @@ async def test_send_notification_tool_home_assistant_error(mock_mcp, get_client,
 
     registered_func = None
 
-    def capture_tool():
+    def capture_tool(**kwargs):
         def decorator(func):
             nonlocal registered_func
             registered_func = func
@@ -334,7 +334,7 @@ async def test_send_notification_tool_unexpected_error(mock_mcp, get_client, moc
 
     registered_func = None
 
-    def capture_tool():
+    def capture_tool(**kwargs):
         def decorator(func):
             nonlocal registered_func
             registered_func = func

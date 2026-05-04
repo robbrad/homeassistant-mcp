@@ -30,7 +30,7 @@ async def test_list_resources_includes_all_templates():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         """Mock resource decorator that tracks registered URIs."""
 
         def decorator(func):
@@ -81,7 +81,7 @@ async def test_list_resources_includes_static_services_uri():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(uri_pattern)
             return func
@@ -116,7 +116,7 @@ async def test_resource_descriptions_are_present():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(
                 {
@@ -159,7 +159,7 @@ async def test_example_uris_can_be_constructed():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(uri_pattern)
             return func
@@ -209,7 +209,7 @@ async def test_query_parameter_documentation():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             # Extract function signature to get query parameters
             import inspect
@@ -287,7 +287,7 @@ async def test_all_resources_use_hass_scheme():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(uri_pattern)
             return func
@@ -321,7 +321,7 @@ async def test_resource_count_is_correct():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(uri_pattern)
             return func
@@ -361,7 +361,7 @@ async def test_resource_templates_have_dynamic_segments():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(uri_pattern)
             return func
@@ -412,7 +412,7 @@ async def test_static_resources_have_no_dynamic_segments():
     mock_mcp = Mock()
     registered_resources = []
 
-    def mock_resource(uri_pattern: str):
+    def mock_resource(uri_pattern: str, **kwargs):
         def decorator(func):
             registered_resources.append(uri_pattern)
             return func
