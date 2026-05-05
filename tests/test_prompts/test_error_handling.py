@@ -310,6 +310,14 @@ class TestGracefulDegradation:
                 "attributes": {"friendly_name": "Offline Switch"},
             },
         ]
+
+        async def _filtered_get_states(domain=None, area=None, limit=None):
+            states = list(client._states_data)
+            if domain:
+                states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+            return states
+
+        client.get_states = AsyncMock(side_effect=_filtered_get_states)
         get_client_func = lambda: client
 
         register_control_prompts(mock_mcp, get_client_func)
@@ -355,6 +363,11 @@ class TestGracefulDegradation:
         """Test home_status_brief handles homes with no entities."""
         client = AsyncMock()
         client._states_data = []  # No entities
+
+        async def _filtered_get_states(domain=None, area=None, limit=None):
+            return list(client._states_data)
+
+        client.get_states = AsyncMock(side_effect=_filtered_get_states)
         get_client_func = lambda: client
 
         register_status_prompts(mock_mcp, get_client_func)
@@ -478,6 +491,14 @@ class TestErrorRecovery:
                 "attributes": {"friendly_name": "Working Light"},
             },
         ]
+
+        async def _filtered_get_states(domain=None, area=None, limit=None):
+            states = list(client._states_data)
+            if domain:
+                states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+            return states
+
+        client.get_states = AsyncMock(side_effect=_filtered_get_states)
         get_client_func = lambda: client
 
         register_control_prompts(mock_mcp, get_client_func)

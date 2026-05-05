@@ -19,6 +19,7 @@ def valid_env_vars(monkeypatch):
     """Set valid environment variables for testing."""
     monkeypatch.setenv("HASS_HOST", "http://homeassistant.local:8123")
     monkeypatch.setenv("HASS_TOKEN", "test_token_with_sufficient_length_12345")
+    monkeypatch.setenv("SERVER_VERSION", "2.0.0")
 
 
 @pytest.fixture

@@ -36,7 +36,11 @@ def mock_mcp():
 
 @pytest.fixture
 def mock_client():
-    """Mock HomeAssistantClient for testing."""
+    """Mock HomeAssistantClient for testing.
+
+    The get_states mock respects the _states_data attribute so tests can
+    populate data by setting: mock_client._states_data = [entities...]
+    """
     client = AsyncMock()
 
     # Set up default return values
@@ -47,6 +51,14 @@ def mock_client():
     }
     client._states_data = []
     client.call_service.return_value = {}
+
+    async def _filtered_get_states(domain=None, area=None, limit=None):
+        states = list(client._states_data)
+        if domain:
+            states = [s for s in states if s.get("entity_id", "").startswith(f"{domain}.")]
+        return states
+
+    client.get_states = AsyncMock(side_effect=_filtered_get_states)
 
     return client
 

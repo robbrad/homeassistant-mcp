@@ -36,7 +36,7 @@ async def test_entity_resource_cache_ttl():
     mcp = MagicMock()
     handlers = {}
 
-    def mock_resource(uri_pattern):
+    def mock_resource(uri_pattern, **kwargs):
         def decorator(func):
             handlers[uri_pattern] = func
             return func
@@ -85,7 +85,7 @@ async def test_area_resource_cache_ttl():
     mcp = MagicMock()
     handlers = {}
 
-    def mock_resource(uri_pattern):
+    def mock_resource(uri_pattern, **kwargs):
         def decorator(func):
             handlers[uri_pattern] = func
             return func
@@ -134,7 +134,7 @@ async def test_device_resource_cache_ttl():
     mcp = MagicMock()
     handlers = {}
 
-    def mock_resource(uri_pattern):
+    def mock_resource(uri_pattern, **kwargs):
         def decorator(func):
             handlers[uri_pattern] = func
             return func
@@ -186,7 +186,7 @@ async def test_services_resource_cache_ttl():
     mcp = MagicMock()
     handlers = {}
 
-    def mock_resource(uri_pattern):
+    def mock_resource(uri_pattern, **kwargs):
         def decorator(func):
             handlers[uri_pattern] = func
             return func
@@ -236,7 +236,7 @@ async def test_history_resource_cache_ttl():
     mcp = MagicMock()
     handlers = {}
 
-    def mock_resource(uri_pattern):
+    def mock_resource(uri_pattern, **kwargs):
         def decorator(func):
             handlers[uri_pattern] = func
             return func
@@ -288,7 +288,7 @@ async def test_all_resources_have_cache_ttl():
     mcp = MagicMock()
     handlers = {}
 
-    def mock_resource(uri_pattern):
+    def mock_resource(uri_pattern, **kwargs):
         def decorator(func):
             handlers[uri_pattern] = func
             return func
