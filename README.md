@@ -10,7 +10,7 @@ Works with Claude, GPT-4, Cursor, Kiro, and any MCP-compatible client.
 - **BM25 tool search** — LLMs discover tools on demand instead of receiving all 40 schemas upfront
 - **MCP Resources** for read-only entity, area, device, and service data
 - **MCP Prompts** for guided workflows (automation creation, troubleshooting, energy optimization)
-- **Tool annotations** — `readOnlyHint` lets clients skip confirmation prompts for safe operations
+- **Tool annotations** — `readOnlyHint` advertises intended read-only behavior to MCP clients. It is a hint, not an authorization check or safety guarantee; see the [MCP tool specification](https://modelcontextprotocol.io/specification/2026-07-28/server/tools)
 - **Smart error log parsing** — deduplicates and summarises HA error logs instead of dumping raw text
 - **Context-aware responses** — compact list responses, domain-filtered queries, progress reporting
 - **Async throughout** with TTL-based caching to reduce API load
